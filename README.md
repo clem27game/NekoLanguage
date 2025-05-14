@@ -8,13 +8,44 @@ NekoScript est un langage de programmation indépendant basé sur le français, 
 
 ## Installation
 
-```bash
-# Installation globale via npm
-npm install -g neko-script
+### Depuis GitHub (Recommandé)
 
-# Vérification de l'installation
+```bash
+# Cloner le dépôt
+git clone https://github.com/votre-username/nekoscript.git
+cd nekoscript
+
+# Option 1: Installation automatique (Linux/Mac)
+chmod +x install.sh
+./install.sh
+
+# Option 2: Installation manuelle
+npm install -g .
+```
+
+### Prérequis
+
+- Node.js 12.0.0 ou supérieur
+- npm (inclus avec Node.js)
+
+### Vérification de l'installation
+
+```bash
+# Vérifier la version installée
 neko-script version
+
+# Afficher l'aide
 neko-script aide
+
+# Exécuter un exemple
+neko-script exécuter examples/demo-rapide.neko
+```
+
+### Installation future via NPM
+
+```bash
+# Une fois publié sur npm
+npm install -g neko-script
 ```
 
 ## Caractéristiques
@@ -109,25 +140,63 @@ neko-script lister
 neko-script aide
 ```
 
+## Premiers pas avec NekoScript
+
+### Création d'un fichier NekoScript
+
+1. Créez un fichier avec l'extension `.neko`, par exemple `mon-programme.neko`
+2. Ouvrez-le avec votre éditeur de texte préféré
+3. Écrivez votre code NekoScript (voir exemples ci-dessous)
+4. Exécutez-le avec la commande `neko-script exécuter mon-programme.neko`
+
+### Exemple pour débuter
+
+```
+// mon-programme.neko
+neko = ("Mon premier programme NekoScript!");
+neko = ("Créé le " + "2023-03-15");
+
+// Calculs simples
+a = 42;
+b = 8;
+resultat = a plus b;
+
+neko = ("Le résultat est:");
+compteneko = resultat;
+```
+
 ## Fonctionnalités principales
 
 ### Affichage
 ```
+// Affiche du texte dans la console
 neko = ("Texte à afficher");
+
+// Affiche un nombre dans la console
+compteneko = 42;
 ```
 
 ### Variables
 ```
+// Définition de variables
 nom = "Valeur";
 nombre = 42;
+estVrai = vrai;
 ```
 
 ### Opérations mathématiques
 ```
+// Opérations de base
 compteneko = 5 plus 3;       // Addition
 compteneko = 10 moins 2;     // Soustraction
 compteneko = 4 multiplier 3; // Multiplication
 compteneko = 8 diviser 2;    // Division
+
+// Avec variables
+a = 10;
+b = 5;
+resultat = a plus b;
+compteneko = resultat;
 ```
 
 ### Fonctions
