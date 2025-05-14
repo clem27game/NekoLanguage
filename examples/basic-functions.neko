@@ -1,0 +1,21 @@
+// NekoScript avec fonctions simplifiées
+
+// Variables et affichage de base
+neko = ("Démarrage du programme");
+age = 18;
+
+// Fonction simplifiée avec nek préfixe
+nek direBonjour() {
+    neko = ("Bonjour depuis NekoScript!");
+}
+
+// Appeler la fonction
+direBonjour();
+
+// Calculs de base
+compteneko = 5 plus 3;
+compteneko = 10 moins 2;
+compteneko = 4 multiplier 3;
+compteneko = 8 diviser 2;
+
+neko = ("Programme terminé!");

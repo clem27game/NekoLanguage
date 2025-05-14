@@ -1,0 +1,17 @@
+// Exemple NekoScript avec uniquement les fonctionnalités qui marchent
+
+// Affichage de textes
+neko = ("Bienvenue dans NekoScript!");
+neko = ("Ce langage a une syntaxe en français");
+neko = ("Voici un exemple de programme simple");
+
+// Calculs mathématiques
+compteneko = 10 plus 5;
+compteneko = 20 moins 7;
+compteneko = 6 multiplier 4;
+compteneko = 100 diviser 4;
+
+// Déclaration de variables (attention: on ne peut pas les utiliser dans neko =)
+age = 25;
+
+neko = ("Fin du programme");

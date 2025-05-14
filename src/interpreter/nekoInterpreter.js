@@ -75,8 +75,8 @@ class NekoInterpreter extends NekoScriptVisitor {
   
   // Visit a parse tree produced by NekoScriptParser#StringConcatenation
   visitStringConcatenation(ctx) {
-    const left = this.visit(ctx.left);
-    const right = this.visit(ctx.right);
+    const left = this.visit(ctx.expression(0));
+    const right = this.visit(ctx.expression(1));
     return String(left) + String(right);
   }
 

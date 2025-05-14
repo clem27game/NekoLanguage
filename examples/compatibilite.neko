@@ -1,0 +1,25 @@
+// Exemple NekoScript compatible avec l'interpréteur actuel
+
+// Affichage simple
+neko = ("Bienvenue dans NekoScript!");
+
+// Déclaration de variables
+monAge = 25;
+monNom = "NekoUser";
+
+// Affichage séparé (sans concaténation)
+neko = ("Mon âge est:");
+neko = (monAge);
+neko = ("Mon nom est:");
+neko = (monNom);
+
+// Calculs mathématiques
+compteneko = 10 plus 5;
+compteneko = 20 moins 7;
+compteneko = 6 multiplier 4;
+compteneko = 100 diviser 4;
+
+// Importation (commentée car pas de bibliothèque disponible)
+// nekImporter("mathLib");
+
+neko = ("Fin du programme");

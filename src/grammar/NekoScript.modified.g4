@@ -54,7 +54,7 @@ paramList
     ;
 
 functionCall
-    : 'nek' ID '(' argList? ')'
+    : ID '(' argList? ')'
     ;
 
 argList
@@ -66,7 +66,7 @@ importStatement
     ;
 
 webSiteDeclaration
-    : 'neksite.créer' ',' 'script' webSiteBlock
+    : 'neksite.créer' webSiteBlock
     ;
 
 webSiteBlock
@@ -74,20 +74,15 @@ webSiteBlock
     ;
 
 webSiteProperty
-    : 'contenu' ':' '(' STRING ')' ','
-    | 'titre' ':' STRING ','
-    | 'lang' ':' STRING ','
-    | 'couleur-de-fond' ':' STRING ','
-    | 'style' styleBlock
-    | 'script' block
+    : 'page' '=' STRING '{' styleBlock? block? '}'
     ;
 
 styleBlock
-    : '{' styleProperty* '}'
+    : 'style' '{' styleProperty* '}'
     ;
 
 styleProperty
-    : ID ':' (STRING | NUMBER) ','
+    : ID ':' (STRING | NUMBER) ';'
     ;
 
 ifStatement
@@ -95,8 +90,7 @@ ifStatement
     ;
 
 condition
-    : expression
-    | expression 'est' expression
+    : expression 'estEgal' expression
     | expression 'plusGrandQue' expression
     | expression 'plusPetitQue' expression
     ;
@@ -113,6 +107,5 @@ block
 ID: [a-zA-Z_][a-zA-Z0-9_]* ;
 NUMBER: [0-9]+ ('.' [0-9]+)? ;
 STRING: '"' (~["\r\n] | '\\"')* '"' ;
-PLUS: '+' ;
 COMMENT: '//' .*? ('\n' | EOF) -> skip ;
 WS: [ \t\r\n]+ -> skip ;
