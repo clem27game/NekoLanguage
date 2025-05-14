@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NekoScript - Langage de programmation en français</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Feather Icons -->
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+</head>
+<body>
+    <header>
+        <div class="logo-container">
+            <img src="logo.svg" alt="NekoScript Logo" class="logo">
+            <h1>NekoScript</h1>
+        </div>
+        <nav>
+            <ul>
+                <li><a href="#accueil" class="active">Accueil</a></li>
+                <li><a href="#documentation">Documentation</a></li>
+                <li><a href="#playground">Playground</a></li>
+                <li><a href="#packages">Bibliothèques</a></li>
+                <li><a href="#telecharger">Télécharger</a></li>
+            </ul>
+        </nav>
+        <button id="theme-toggle" aria-label="Toggle dark mode">
+            <i data-feather="moon"></i>
+        </button>
+    </header>
+
+    <main>
+        <section id="accueil" class="hero">
+            <div class="hero-content">
+                <h2>NekoScript</h2>
+                <h3>Un langage de programmation en français</h3>
+                <p>Créez des sites web, des jeux et des bots Discord avec une syntaxe simple et intuitive</p>
+                <div class="cta-buttons">
+                    <a href="#telecharger" class="btn primary">Télécharger</a>
+                    <a href="#documentation" class="btn secondary">Documentation</a>
+                </div>
+                <div class="code-example">
+                    <pre><code>// Exemple de code NekoScript
+neko = ("Bonjour, monde!");
+compteneko = 5 plus 3;
+nekBoucle(i de 1 à 3) {
+    neko = ("Boucle #" + i);
+}</code></pre>
+                </div>
+            </div>
+            <div class="hero-image">
+                <img src="https://pixabay.com/get/gfa7e99c68bff19be7f680223fcf5f382d82e2063e2bdd6675f9072c943528a54dcc0029245252a0238f27a53c632fa5fc38380b95d051779d2f2d4d717cc5cf4_1280.jpg" alt="NekoScript Logo" class="language-logo">
+            </div>
+        </section>
+
+        <section id="caracteristiques" class="features">
+            <h2>Caractéristiques</h2>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <i data-feather="globe"></i>
+                    <h3>Développement Web</h3>
+                    <p>Créez des sites web interactifs avec une syntaxe simple et intuitive.</p>
+                </div>
+                <div class="feature-card">
+                    <i data-feather="play"></i>
+                    <h3>Développement de Jeux</h3>
+                    <p>Concevez des jeux 2D avec des fonctions spécialisées pour le développement de jeux.</p>
+                </div>
+                <div class="feature-card">
+                    <i data-feather="message-circle"></i>
+                    <h3>Bots Discord</h3>
+                    <p>Développez des bots Discord avec des bibliothèques spécialisées.</p>
+                </div>
+                <div class="feature-card">
+                    <i data-feather="package"></i>
+                    <h3>Gestion de Packages</h3>
+                    <p>Téléchargez et publiez des bibliothèques pour étendre les fonctionnalités.</p>
+                </div>
+                <div class="feature-card">
+                    <i data-feather="code"></i>
+                    <h3>Syntaxe en Français</h3>
+                    <p>Programmez avec des mots-clés et des fonctions en français.</p>
+                </div>
+                <div class="feature-card">
+                    <i data-feather="layers"></i>
+                    <h3>Extensible</h3>
+                    <p>Créez vos propres bibliothèques en NekoScript, JavaScript, Python ou Ruby.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="exemples" class="examples">
+            <h2>Exemples de Code</h2>
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="web">Site Web</button>
+                <button class="tab-btn" data-tab="game">Jeu</button>
+                <button class="tab-btn" data-tab="bot">Bot Discord</button>
+            </div>
+            <div class="tab-content">
+                <div id="web" class="tab-pane active">
+                    <div class="code-example-container">
+                        <div class="code-editor">
+                            <pre><code>// Créer un site web
+neksite.créer, script {
+    contenu : ("Bienvenue sur mon site NekoScript!"),
+    titre : "Mon Premier Site",
+    lang : "fr",
+    couleur-de-fond : "#f0f0f0",
+    style {
+        corps : "font-family: Arial, sans-serif",
+        titres : "color: #333",
+        paragraphe : "line-height: 1.6"
+    }
+    script {
+        nekAfficher("Site chargé!");
+    }
+}</code></pre>
+                        </div>
+                        <div class="preview">
+                            <div class="browser-mockup">
+                                <div class="browser-header">
+                                    <div class="browser-buttons">
+                                        <span></span>
+                                        <span></span>
+                                        <span></span>
+                                    </div>
+                                    <div class="browser-address">file:///mon-site-nekoscript.html</div>
+                                </div>
+                                <div class="browser-content">
+                                    <h1>Mon Premier Site</h1>
+                                    <p>Bienvenue sur mon site NekoScript!</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="game" class="tab-pane">
+                    <div class="code-example-container">
+                        <div class="code-editor">
+                            <pre><code>// Exemple de jeu simple
+nekImporter("NekoGame");
+
+joueur = nekCreerSprite("chat.png", 100, 300, 64, 64);
+obstacle = nekCreerSprite("arbre.png", 500, 300, 100, 120);
+score = 0;
+
+nekJeu.chaqueTrame(function() {
+    nekJeu.effacer();
+    
+    nekSi(nekClavier.toucheAppuyee("droite")) {
+        joueur.x = joueur.x plus 5;
+    }
+    
+    nekSi(nekDetecterCollision(joueur, obstacle)) {
+        nekJeu.texte("Game Over!", 350, 300, "40px Arial", "#F00");
+    }
+});</code></pre>
+                        </div>
+                        <div class="preview">
+                            <div class="game-mockup">
+                                <img src="https://pixabay.com/get/g22174aa9e8ad9236936864dd6002fd86a775f1dffce2d3521551e1b4119479114820fb744e60765d1bffce55bc2ffcb3632daf9fa920b78ad1503a4feabb3a88_1280.jpg" alt="Game Development" class="game-preview">
+                                <div class="game-overlay">
+                                    <div class="game-score">Score: 0</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="bot" class="tab-pane">
+                    <div class="code-example-container">
+                        <div class="code-editor">
+                            <pre><code>// Bot Discord simple
+nekImporter("Discord.neko");
+
+bot = nekDiscord.creer({
+    token: "MON_TOKEN_SECRET"
+});
+
+nekDiscord.surMessage(function(message) {
+    nekSi(message.contenu est "!bonjour") {
+        nekDiscord.repondre(message, "Bonjour, " + message.auteur + "!");
+    }
+});
+
+bot.connecter();</code></pre>
+                        </div>
+                        <div class="preview">
+                            <div class="discord-mockup">
+                                <div class="discord-header">
+                                    <div class="discord-title">Canal général</div>
+                                </div>
+                                <div class="discord-messages">
+                                    <div class="discord-message">
+                                        <span class="discord-user">Utilisateur1:</span> !bonjour
+                                    </div>
+                                    <div class="discord-message bot-message">
+                                        <span class="discord-user">NekoBot:</span> Bonjour, Utilisateur1!
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="documentation" class="documentation">
+            <h2>Documentation</h2>
+            <div class="documentation-container">
+                <div class="documentation-nav">
+                    <ul>
+                        <li><a href="#introduction" class="doc-link active">Introduction</a></li>
+                        <li><a href="#installation" class="doc-link">Installation</a></li>
+                        <li><a href="#syntaxe" class="doc-link">Syntaxe</a></li>
+                        <li><a href="#variables" class="doc-link">Variables</a></li>
+                        <li><a href="#fonctions" class="doc-link">Fonctions</a></li>
+                        <li><a href="#structures" class="doc-link">Structures de Contrôle</a></li>
+                        <li><a href="#web-dev" class="doc-link">Développement Web</a></li>
+                        <li><a href="#game-dev" class="doc-link">Développement de Jeux</a></li>
+                        <li><a href="#discord-dev" class="doc-link">Bots Discord</a></li>
+                        <li><a href="#packages" class="doc-link">Gestion de Packages</a></li>
+                    </ul>
+                </div>
+                <div class="documentation-content">
+                    <div id="introduction" class="doc-section active">
+                        <h3>Introduction à NekoScript</h3>
+                        <p>NekoScript est un langage de programmation en français conçu pour être simple et accessible. Il permet de créer des sites web, des jeux, et des bots Discord avec une syntaxe intuitive et des fonctions en français.</p>
+                        <p>Les fichiers NekoScript portent l'extension <code>.neko</code> et peuvent être exécutés avec la commande <code>$neko-script exécuter fichier.neko</code>.</p>
+                    </div>
+                    <!-- Other documentation sections would be added here -->
+                </div>
+            </div>
+        </section>
+
+        <section id="playground" class="playground">
+            <h2>Playground</h2>
+            <div class="editor-container">
+                <div class="editor-toolbar">
+                    <button id="run-code" class="btn primary">
+                        <i data-feather="play"></i> Exécuter
+                    </button>
+                    <button id="save-code" class="btn secondary">
+                        <i data-feather="save"></i> Sauvegarder
+                    </button>
+                    <select id="examples-dropdown">
+                        <option value="">Exemples</option>
+                        <option value="hello">Hello World</option>
+                        <option value="web">Site Web</option>
+                        <option value="game">Jeu Simple</option>
+                    </select>
+                </div>
+                <div class="editor-main">
+                    <div class="code-editor" id="playground-editor">
+                        <pre><code>// Écrivez votre code NekoScript ici
+neko = ("Bonjour, monde!");
+compteneko = 5 plus 3;</code></pre>
+                    </div>
+                    <div class="editor-output">
+                        <div class="output-header">
+                            <h3>Console</h3>
+                            <button id="clear-output" class="btn mini">
+                                <i data-feather="trash-2"></i>
+                            </button>
+                        </div>
+                        <div class="output-content" id="playground-output">
+                            <div class="output-line">Bonjour, monde!</div>
+                            <div class="output-line">8</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="telecharger" class="download">
+            <h2>Télécharger NekoScript</h2>
+            <div class="download-container">
+                <div class="download-options">
+                    <div class="download-option">
+                        <i data-feather="terminal"></i>
+                        <h3>Installation par Terminal</h3>
+                        <div class="terminal-mockup">
+                            <pre><code>$neko-script télécharger</code></pre>
+                        </div>
+                    </div>
+                    <div class="platform-options">
+                        <div class="platform-option">
+                            <i data-feather="monitor"></i>
+                            <h3>Windows</h3>
+                            <a href="#" class="btn primary">Télécharger pour Windows</a>
+                        </div>
+                        <div class="platform-option">
+                            <i data-feather="monitor"></i>
+                            <h3>MacOS</h3>
+                            <a href="#" class="btn primary">Télécharger pour MacOS</a>
+                        </div>
+                        <div class="platform-option">
+                            <i data-feather="monitor"></i>
+                            <h3>Linux</h3>
+                            <a href="#" class="btn primary">Télécharger pour Linux</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="editor-preview">
+                    <img src="https://pixabay.com/get/ged715f823b1cecd47dae82e78f848487fe306d9a525bf16a9355082bef074a89b8dd04d9feee70390adce79c9b5d494be4b0f9778270a34dedd79c8063585e1d_1280.jpg" alt="Code Editor" class="editor-screenshot">
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="footer-content">
+            <div class="footer-logo">
+                <img src="logo.svg" alt="NekoScript Logo" class="logo small">
+                <p>NekoScript</p>
+            </div>
+            <div class="footer-links">
+                <div class="footer-section">
+                    <h4>Liens Rapides</h4>
+                    <ul>
+                        <li><a href="#accueil">Accueil</a></li>
+                        <li><a href="#documentation">Documentation</a></li>
+                        <li><a href="#playground">Playground</a></li>
+                        <li><a href="#telecharger">Télécharger</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Communauté</h4>
+                    <ul>
+                        <li><a href="#">GitHub</a></li>
+                        <li><a href="#">Discord</a></li>
+                        <li><a href="#">Twitter</a></li>
+                        <li><a href="#">Blog</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Ressources</h4>
+                    <ul>
+                        <li><a href="#">Guide de Démarrage</a></li>
+                        <li><a href="#">Tutoriels</a></li>
+                        <li><a href="#">FAQ</a></li>
+                        <li><a href="#">Contribuer</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2023 NekoScript. Tous droits réservés.</p>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

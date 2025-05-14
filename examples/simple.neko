@@ -1,0 +1,16 @@
+// Un programme simple en NekoScript
+
+// Afficher un message dans la console
+neko = ("Bonjour, chat!");
+
+// Déclarer une variable
+monNom = "NekoScript";
+
+// Faire des calculs avec compteneko
+compteneko = 5 plus 3;
+compteneko = 10 moins 2;
+compteneko = 4 multiplier 3;
+compteneko = 8 diviser 2;
+
+// Variables numériques
+age = 18;

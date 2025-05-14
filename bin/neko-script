@@ -1,0 +1,4 @@
+#!/usr/bin/env node
+
+// Require the NekoScript CLI application
+require('../src/index.js');

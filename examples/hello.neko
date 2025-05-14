@@ -1,0 +1,35 @@
+// Un simple programme "Hello World" en NekoScript
+
+// Afficher un message dans la console
+neko = ("Bonjour, chat!");
+
+// Déclarer une variable et l'afficher
+monNom = "NekoScript";
+neko = ("Je m'appelle " + monNom);
+
+// Faire des calculs avec compteneko
+compteneko = 5 plus 3;
+compteneko = 10 moins 2;
+compteneko = 4 multiplier 3;
+compteneko = 8 diviser 2;
+
+// Déclarer et appeler une fonction
+nekBonjour(nom) {
+    neko = ("Bonjour, " + nom + "!");
+}
+
+nekBonjour("Développeur");
+
+// Boucle en NekoScript
+nekBoucle(i de 1 à 5) {
+    neko = ("Boucle #" + i);
+}
+
+// Structure conditionnelle
+age = 18;
+
+nekSi(age plusGrandQue 17) {
+    neko = ("Vous êtes majeur!");
+} nekSinon {
+    neko = ("Vous êtes mineur!");
+}

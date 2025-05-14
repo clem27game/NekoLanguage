@@ -1,0 +1,31 @@
+// Exemple de création de site web en NekoScript
+
+// Créer un site web
+neksite.créer, script {
+    contenu : ("Bienvenue sur mon site NekoScript!"),
+    titre : "Mon Premier Site NekoScript",
+    lang : "fr",
+    couleur-de-fond : "#f0f0f0",
+    style {
+        corps : "font-family: Arial, sans-serif",
+        titres : "color: #333",
+        paragraphe : "line-height: 1.6",
+        bouton : "background-color: #4CAF50; color: white; border: none; padding: 10px 20px; cursor: pointer"
+    }
+    script {
+        // Code NekoScript à exécuter dans le site
+        nekAfficher("Site chargé!");
+        
+        // Fonction pour gérer le clic sur un bouton
+        nekClicBouton(boutonId) {
+            nekAfficher("Bouton cliqué: " + boutonId);
+        }
+        
+        // Animation simple
+        nekBoucle(i de 1 à 5) {
+            nekRetarder(i multiplier 1000, function() {
+                nekAfficher("Animation étape " + i);
+            });
+        }
+    }
+}

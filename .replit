@@ -1,0 +1,41 @@
+modules = ["nodejs-20"]
+
+[nix]
+channel = "stable-24_05"
+packages = ["antlr4"]
+
+[workflows]
+runButton = "Project"
+
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "NekoScript"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "neko-script-interpreter"
+
+[[workflows.workflow]]
+name = "NekoScript"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm install antlr4 sqlite3 && chmod +x bin/neko-script && node src/index.js exécuter examples/hello.neko"
+waitForPort = 5000
+
+[[workflows.workflow]]
+name = "neko-script-interpreter"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "chmod +x bin/neko-script && cd examples && node ../bin/neko-script exécuter hello.neko"
+
+[deployment]
+run = ["sh", "-c", "npm install antlr4 sqlite3 && chmod +x bin/neko-script && node src/index.js exécuter examples/hello.neko"]
