@@ -1,37 +1,53 @@
 # Fichiers de développement
-.git
-.github
-node_modules
-npm-debug.log
+.git/
+.github/
+node_modules/
 *.log
-*.tgz
 .DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.iml
 
-# Fichiers de test et de build
-test
-coverage
-.nyc_output
+# Fichiers de test et d'édition
+test/
+__tests__/
+coverage/
+.nyc_output/
+*.test.js
+*.spec.js
+jest.config.js
+
+# Fichiers de build
 .travis.yml
-.eslintrc
-.eslintignore
-.gitignore
+.gitlab-ci.yml
+.github/workflows/
+webpack.config.js
+rollup.config.js
 tsconfig.json
+.babelrc
+.eslintrc*
+.prettierrc*
 
-# IDE files
-.idea
-.vscode
-*.sublime-*
+# Documentation et exemples avancés
+docs/CONTRIBUTING.md
+docs/LIMITATIONS.md
+docs/PUBLISHING.md
+examples/syntaxe-correcte.neko
+examples/demo-complet.neko
+*.md.backup
+
+# Autres fichiers
+package.json.template
 .replit
+.nvmrc
+.npmrc
 replit.nix
-replit.sh
-.breakpoints
-
-# Documentation source
-/docs-src
-
-# Ressources de développement
-/examples/dev
-/src/grammar/*.modified.g4
-/src/test
 fix-antlr.sh
+generated-icon.png
 test-antlr.js
+
+# Fichiers temporaires
+*.tmp
+*.temp
+*~

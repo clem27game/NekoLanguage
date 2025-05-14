@@ -117,6 +117,7 @@ Pour plus d'informations, consultez les documents suivants dans le répertoire `
 - [Guide de démarrage rapide](docs/QUICKSTART.md) - Pour commencer à utiliser NekoScript
 - [Limitations actuelles](docs/LIMITATIONS.md) - Informations sur les limitations de la version actuelle
 - [Guide de contribution](docs/CONTRIBUTING.md) - Comment contribuer au projet
+- [Guide de publication](docs/PUBLISHING.md) - Instructions pour publier NekoScript sur GitHub et npm
 
 ## Commandes en terminal
 
