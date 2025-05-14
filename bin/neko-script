@@ -1,4 +1,47 @@
 #!/usr/bin/env node
 
-// Require the NekoScript CLI application
+/**
+ * NekoScript - Un langage de programmation en français
+ * 
+ * Ce script est le point d'entrée pour l'exécution des commandes NekoScript
+ * depuis le terminal. Il prend les arguments de la ligne de commande et les
+ * transmet à l'application CLI de NekoScript.
+ * 
+ * Commandes disponibles:
+ * - exécuter <fichier> : Exécute un script NekoScript
+ * - télécharger <package> : Télécharge un package depuis le dépôt
+ * - librairie <nom> : Installe une bibliothèque
+ * - publish <package> : Publie un package sur le dépôt
+ * - lister : Liste les packages disponibles
+ * - aide : Affiche l'aide
+ * 
+ * Exemples:
+ * neko-script exécuter hello.neko
+ * neko-script télécharger mathavancee
+ * neko-script aide
+ */
+
+// Affichage du logo si aucun argument n'est fourni
+if (process.argv.length <= 2) {
+  console.log(`
+  ╔═══════════════════════════════════════════╗
+  ║                                           ║
+  ║              NekoScript 🐱                ║
+  ║     Langage de programmation français     ║
+  ║                                           ║
+  ╚═══════════════════════════════════════════╝
+  
+  Utilisez 'neko-script aide' pour voir les commandes disponibles.
+  `);
+  process.exit(0);
+}
+
+// Ajout d'un gestionnaire d'erreurs global
+process.on('uncaughtException', (err) => {
+  console.error('\n\x1b[31m⚠️  Erreur non gérée:\x1b[0m', err.message);
+  console.error('Si ce problème persiste, veuillez signaler cette erreur sur notre dépôt GitHub.');
+  process.exit(1);
+});
+
+// Requis de l'application CLI NekoScript
 require('../src/index.js');

@@ -1,0 +1,63 @@
+// NekoScript - Démo rapide (compatible v1.0)
+// Ce script montre les fonctionnalités de base de NekoScript v1.0
+
+// ------ Affichage de texte ------
+neko = ("Bonjour depuis NekoScript!");
+neko = ("Un langage de programmation en français");
+neko = ("");
+
+// ------ Variables et textes ------
+neko = ("Nom du langage: NekoScript");
+neko = ("Version actuelle: 1.0.0");
+neko = ("");
+
+// ------ Calculs mathématiques ------
+neko = ("Démonstration de calculs:");
+
+// Addition
+a = 10;
+b = 5;
+resultat = a plus b;
+neko = ("10 + 5 =");
+compteneko = resultat;
+
+// Soustraction
+resultat = a moins b;
+neko = ("10 - 5 =");
+compteneko = resultat;
+
+// Multiplication
+resultat = a multiplier b;
+neko = ("10 * 5 =");
+compteneko = resultat;
+
+// Division
+resultat = a diviser b;
+neko = ("10 / 5 =");
+compteneko = resultat;
+
+// ------ Conditions simples ------
+neko = ("");
+neko = ("Démonstration de conditions:");
+
+temperature = 25;
+
+nekSi(temperature plusGrandQue 30) {
+  neko = ("Il fait très chaud!");
+} nekSinon {
+  neko = ("Il ne fait pas très chaud!");
+}
+
+// ------ Boucles ------
+neko = ("");
+neko = ("Démonstration de boucles:");
+
+nekBoucle(i de 1 à 3) {
+  neko = ("Itération numéro");
+  compteneko = i;
+}
+
+// ------ Fin de la démo ------
+neko = ("");
+neko = ("Fin de la démo rapide de NekoScript");
+neko = ("Pour plus d'exemples, consultez le dossier 'examples/'");

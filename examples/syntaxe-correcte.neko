@@ -1,40 +1,85 @@
-// NekoScript - Exemple avec syntaxe compatible avec l'interpréteur actuel
+// Exemple de script NekoScript avec une syntaxe strictement conforme
+// à la grammaire actuelle, pour éviter toute erreur d'analyse
 
-// Affichage de messages
-neko = ("Bienvenue dans NekoScript!");
-neko = ("=========================");
+// Afficher du texte (sans concaténation)
+neko = ("NekoScript - Exemple syntaxiquement correct");
+neko = ("==========================================");
 
-// Déclaration de variables et affichage
-texte = "Bonjour tout le monde";
-neko = ("Texte stocké:");
-neko = (texte);  // Note: Ceci ne fonctionne pas encore parfaitement
+// Variables simples
+message = "Bonjour";
+neko = (message);
 
-// Opérations mathématiques
-neko = ("Démonstration des opérations mathématiques:");
+nombre = 42;
+compteneko = nombre;
 
-neko = ("Addition: 5 + 3 =");
-compteneko = 5 plus 3;
+// Opérations mathématiques simples
+neko = ("Calculs mathématiques:");
 
-neko = ("Soustraction: 10 - 2 =");
-compteneko = 10 moins 2;
+a = 15;
+b = 7;
 
-neko = ("Multiplication: 4 * 3 =");
-compteneko = 4 multiplier 3;
+resultat = a plus b;
+neko = ("Addition: 15 + 7 = ");
+compteneko = resultat;
 
-neko = ("Division: 8 / 2 =");
-compteneko = 8 diviser 2;
+resultat = a moins b;
+neko = ("Soustraction: 15 - 7 = ");
+compteneko = resultat;
 
-// Exemples des structures plus avancées (commentées car pas encore supportées)
-/*
-nekSi(age plusGrandQue 18) {
-    neko = ("Vous êtes majeur!");
+resultat = a multiplier b;
+neko = ("Multiplication: 15 * 7 = ");
+compteneko = resultat;
+
+resultat = a diviser b;
+neko = ("Division: 15 / 7 = ");
+compteneko = resultat;
+
+// Opérations mathématiques avec parenthèses
+c = 2;
+resultat = (a plus b) multiplier c;
+neko = ("Expression: (15 + 7) * 2 = ");
+compteneko = resultat;
+
+// Conditions
+neko = ("Démonstration des conditions:");
+
+temperature = 25;
+
+nekSi(temperature plusGrandQue 30) {
+    neko = ("Il fait très chaud");
+} nekSinonSi(temperature plusGrandQue 20) {
+    neko = ("Il fait bon");
+} nekSinonSi(temperature plusGrandQue 10) {
+    neko = ("Il fait frais");
 } nekSinon {
-    neko = ("Vous êtes mineur!");
+    neko = ("Il fait froid");
 }
 
-nekBoucle(i de 1 à 5) {
-    neko = ("Itération numéro " + i);
+// Égalité
+choix = "oui";
+nekSi(choix estEgal "oui") {
+    neko = ("Vous avez choisi oui");
 }
-*/
 
-neko = ("Fin du programme");
+nekSi(choix estEgal "non") {
+    neko = ("Vous avez choisi non");
+}
+
+// Boucles
+neko = ("Démonstration des boucles:");
+
+nekBoucle(i de 1 à 3) {
+    neko = ("Itération numéro");
+    compteneko = i;
+}
+
+// Test de variables numériques
+x = 5;
+y = 10;
+
+nekSi(x plusPetitQue y) {
+    neko = ("x est plus petit que y");
+}
+
+// Fin du programme
+neko = ("Fin du programme d'exemple - Syntaxe correcte");

@@ -1,16 +1,22 @@
-// Un programme simple en NekoScript
+// Un programme "Hello World" simple en NekoScript
 
-// Afficher un message dans la console
-neko = ("Bonjour, chat!");
+// Afficher un message
+neko = ("Bonjour, monde!");
 
-// Déclarer une variable
-monNom = "NekoScript";
+// Variables
+message = "J'aime NekoScript";
+neko = (message);
 
-// Faire des calculs avec compteneko
+// Calculs mathématiques
+neko = ("Démonstration des opérations mathématiques:");
 compteneko = 5 plus 3;
 compteneko = 10 moins 2;
 compteneko = 4 multiplier 3;
 compteneko = 8 diviser 2;
 
-// Variables numériques
-age = 18;
+// Affichage d'un résultat de calcul
+a = 10;
+b = 5;
+resultat = a plus b;
+neko = ("Le résultat est:");
+compteneko = resultat;

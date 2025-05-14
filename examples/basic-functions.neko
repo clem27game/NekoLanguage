@@ -1,21 +1,29 @@
-// NekoScript avec fonctions simplifiées
+// Exemple NekoScript avec uniquement les fonctionnalités de base
 
-// Variables et affichage de base
-neko = ("Démarrage du programme");
-age = 18;
+// Affichage de texte simple
+neko = ("Exemple de fonctionnalités de base en NekoScript");
+neko = ("===========================================");
 
-// Fonction simplifiée avec nek préfixe
-nek direBonjour() {
-    neko = ("Bonjour depuis NekoScript!");
-}
+// Variables et affichage
+neko = ("Affichage de variables:");
+texte = "Hello NekoScript!";
+neko = ("Hello NekoScript!");
 
-// Appeler la fonction
-direBonjour();
-
-// Calculs de base
+// Calculs mathématiques
+neko = ("Calculs mathématiques:");
 compteneko = 5 plus 3;
 compteneko = 10 moins 2;
 compteneko = 4 multiplier 3;
 compteneko = 8 diviser 2;
 
-neko = ("Programme terminé!");
+// Variables et calculs
+neko = ("Variables et calculs:");
+a = 10;
+b = 3;
+compteneko = a plus b;
+compteneko = a moins b;
+compteneko = a multiplier b;
+compteneko = a diviser b;
+
+// Fin du programme
+neko = ("Fin du programme de base");

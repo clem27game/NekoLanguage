@@ -1,25 +1,91 @@
-// Exemple NekoScript compatible avec l'interpréteur actuel
+// Programme de démonstration pour les fonctionnalités compatibles de NekoScript
 
-// Affichage simple
-neko = ("Bienvenue dans NekoScript!");
+// Affichage de base
+neko = ("Programme de démonstration NekoScript");
+neko = ("====================================");
 
-// Déclaration de variables
-monAge = 25;
-monNom = "NekoUser";
+// Variables et types de base
+texte = "Ceci est une chaîne de caractères";
+nombre = 42;
+neko = ("Démonstration des variables:");
+neko = (texte);
+compteneko = nombre;
 
-// Affichage séparé (sans concaténation)
-neko = ("Mon âge est:");
-neko = (monAge);
-neko = ("Mon nom est:");
-neko = (monNom);
+// Opérations mathématiques
+neko = ("");
+neko = ("Démonstration des opérations mathématiques:");
+a = 10;
+b = 5;
 
-// Calculs mathématiques
-compteneko = 10 plus 5;
-compteneko = 20 moins 7;
-compteneko = 6 multiplier 4;
-compteneko = 100 diviser 4;
+neko = ("Addition: 10 plus 5 =");
+compteneko = a plus b;
 
-// Importation (commentée car pas de bibliothèque disponible)
-// nekImporter("mathLib");
+neko = ("Soustraction: 10 moins 5 =");
+compteneko = a moins b;
 
-neko = ("Fin du programme");
+neko = ("Multiplication: 10 multiplier 5 =");
+compteneko = a multiplier b;
+
+neko = ("Division: 10 diviser 5 =");
+compteneko = a diviser b;
+
+// Conditions simples
+neko = ("");
+neko = ("Démonstration des conditions:");
+
+age = 20;
+nekSi(age plusGrandQue 18) {
+  neko = ("Vous êtes majeur avec 20 ans");
+} nekSinon {
+  neko = ("Vous êtes mineur");
+}
+
+temperature = 5;
+nekSi(temperature plusGrandQue 30) {
+  neko = ("Il fait très chaud!");
+} nekSinonSi(temperature plusGrandQue 20) {
+  neko = ("Il fait bon!");
+} nekSinonSi(temperature plusGrandQue 10) {
+  neko = ("Il fait frais!");
+} nekSinon {
+  neko = ("Il fait froid!");
+}
+
+// Boucles
+neko = ("");
+neko = ("Démonstration des boucles:");
+
+nekBoucle(compteur de 1 à 5) {
+  neko = ("Itération numéro");
+  compteneko = compteur;
+}
+
+// Exemple d'une calculatrice simple
+neko = ("");
+neko = ("Calculatrice simple:");
+operande1 = 15;
+operande2 = 5;
+operation = "addition";
+
+nekSi(operation estEgal "addition") {
+  resultat = operande1 plus operande2;
+  neko = ("15 + 5 = ");
+  compteneko = resultat;
+} nekSinonSi(operation estEgal "soustraction") {
+  resultat = operande1 moins operande2;
+  neko = ("15 - 5 = ");
+  compteneko = resultat;
+} nekSinonSi(operation estEgal "multiplication") {
+  resultat = operande1 multiplier operande2;
+  neko = ("15 * 5 = ");
+  compteneko = resultat;
+} nekSinonSi(operation estEgal "division") {
+  resultat = operande1 diviser operande2;
+  neko = ("15 / 5 = ");
+  compteneko = resultat;
+} nekSinon {
+  neko = ("Opération non reconnue");
+}
+
+neko = ("");
+neko = ("Fin du programme de démonstration");

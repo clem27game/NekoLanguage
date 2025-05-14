@@ -1,37 +1,124 @@
-// Démo complète de NekoScript
+// NekoScript - Présentation complète des fonctionnalités
+// Ce fichier montre toutes les capacités du langage NekoScript
 
-// Affichage de textes
-neko = ("=== DÉMO NEKOSCRIPT ===");
-neko = ("Ce langage a une syntaxe en français");
+// === AFFICHAGE ===
+neko = ("Bienvenue dans NekoScript!");
+neko = ("=========================");
 
-// Variables
-nomUtilisateur = "Chat Programmeur";
-age = 3;
-poids = 4.5;
+// === VARIABLES ===
+// Déclaration de variables
+texte = "Hello World";
+nombre = 42;
+decimal = 3.14;
+vrai = 1;
+faux = 0;
 
-// Affichage des variables (en séparé pour compatibilité)
-neko = ("Nom: ");
-neko = (nomUtilisateur);
-neko = ("Âge: ");
-neko = (age);
-neko = ("Poids: ");
-neko = (poids);
+// Affichage des variables
+neko = ("Variables:");
+neko = (texte);
+compteneko = nombre;
+compteneko = decimal;
 
-// Calculs arithmétiques
-neko = ("=== CALCULS ===");
-compteneko = 10 plus 5; // → 15
-compteneko = 20 moins 7; // → 13
-compteneko = 6 multiplier 4; // → 24
-compteneko = 100 diviser 4; // → 25
+// === OPÉRATIONS MATHÉMATIQUES ===
+neko = ("");
+neko = ("Opérations mathématiques:");
 
-// Calculs avec variables (nécessite l'interprétation correcte)
-ageDouble = 2;
-compteneko = age multiplier ageDouble; // → 6
+// Addition
+a = 10;
+b = 5;
+neko = ("Addition: 10 + 5 = ");
+compteneko = a plus b;
 
-// Exemple de bibliothèque standard (si implémenté)
-neko = ("=== FONCTIONS STANDARD ===");
-// nekArrondir(3.7) → 4
-// nekConcatener("chat", "mignon") → "chatmignon"
-// nekLongueur("nekoscript") → 10
+// Soustraction
+neko = ("Soustraction: 10 - 5 = ");
+compteneko = a moins b;
 
-neko = ("=== FIN DE LA DÉMO ===");
+// Multiplication
+neko = ("Multiplication: 10 * 5 = ");
+compteneko = a multiplier b;
+
+// Division
+neko = ("Division: 10 / 5 = ");
+compteneko = a diviser b;
+
+// Expressions plus complexes
+neko = ("Expression: (10 + 5) * 2 = ");
+resultat = (a plus b) multiplier 2;
+compteneko = resultat;
+
+// === CONDITIONS ===
+neko = ("");
+neko = ("Structures conditionnelles:");
+
+// If simple
+age = 20;
+nekSi(age plusGrandQue 18) {
+  neko = ("Vous êtes majeur");
+} nekSinon {
+  neko = ("Vous êtes mineur");
+}
+
+// If avec plusieurs branches
+note = 15;
+nekSi(note plusGrandQue 16) {
+  neko = ("Excellent");
+} nekSinonSi(note plusGrandQue 14) {
+  neko = ("Très bien");
+} nekSinonSi(note plusGrandQue 12) {
+  neko = ("Bien");
+} nekSinonSi(note plusGrandQue 10) {
+  neko = ("Passable");
+} nekSinon {
+  neko = ("Insuffisant");
+}
+
+// Opérateurs de comparaison
+a = 10;
+b = 10;
+nekSi(a estEgal b) {
+  neko = ("a est égal à b");
+}
+
+a = 5;
+b = 10;
+nekSi(a plusPetitQue b) {
+  neko = ("a est plus petit que b");
+}
+
+// === BOUCLES ===
+neko = ("");
+neko = ("Boucles:");
+
+// Boucle simple
+neko = ("Boucle de 1 à 5:");
+nekBoucle(i de 1 à 5) {
+  neko = ("Itération");
+  compteneko = i;
+}
+
+// Boucle avec calcul
+neko = ("Table de multiplication de 7:");
+nekBoucle(i de 1 à 10) {
+  resultat = 7 multiplier i;
+  neko = ("7 x ");
+  compteneko = i;
+  neko = (" = ");
+  compteneko = resultat;
+}
+
+// === IMPORT DE BIBLIOTHÈQUES ===
+// Importation d'une bibliothèque (commenté car la bibliothèque n'existe pas encore)
+// nekImporter("mathavancee");
+// racine = nekRacineCarree(16);
+// neko = ("La racine carrée de 16 est:");
+// compteneko = racine;
+
+// === CRÉATION DE SITES WEB ===
+neko = ("");
+neko = ("NekoScript permet aussi de créer des sites web et des jeux!");
+neko = ("Voir les exemples webSite.neko et simpleGame.neko");
+
+// === FIN DE LA DÉMO ===
+neko = ("");
+neko = ("Fin de la présentation de NekoScript");
+neko = ("Merci d'avoir découvert ce langage!");

@@ -80,7 +80,14 @@ class NekoInterpreter extends NekoScriptVisitor {
   visitPrintExpressionComplex(ctx) {
     try {
       const result = this.visit(ctx.expression());
-      console.log(result);
+      // Clean output formatting to handle various result types
+      if (Array.isArray(result)) {
+        console.log(result[0]);
+      } else if (typeof result === 'number') {
+        console.log(result);
+      } else {
+        console.log(result);
+      }
       return result;
     } catch (error) {
       console.error("Erreur dans l'expression d'impression:", error.message);
@@ -106,7 +113,7 @@ class NekoInterpreter extends NekoScriptVisitor {
   visitAddition(ctx) {
     const left = this.visit(ctx.numExpression(0));
     const right = this.visit(ctx.numExpression(1));
-    return left + right;
+    return Number(left) + Number(right); // Ensure numeric addition
   }
 
   // Visit a parse tree produced by NekoScriptParser#Subtraction

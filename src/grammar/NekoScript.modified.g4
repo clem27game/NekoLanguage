@@ -33,7 +33,11 @@ expression
     | STRING # StringExpression
     | ID # IdentifierExpression
     | '(' expression ')' # ParenExpression
-    | expression '+' expression # StringConcatenation
+    | stringConcatenation # StringConcatExpression
+    ;
+
+stringConcatenation
+    : expression '+' expression
     ;
 
 numExpression
@@ -46,7 +50,7 @@ numExpression
     ;
 
 functionDeclaration
-    : ('nek' ID | ID) '(' paramList? ')' block
+    : 'nek' ID '(' paramList? ')' block
     ;
 
 paramList
@@ -54,7 +58,7 @@ paramList
     ;
 
 functionCall
-    : ID '(' argList? ')'
+    : ('nek' ID | ID) '(' argList? ')'
     ;
 
 argList
@@ -74,7 +78,11 @@ webSiteBlock
     ;
 
 webSiteProperty
-    : 'page' '=' STRING '{' styleBlock? block? '}'
+    : 'page' '=' STRING '{' (webSiteProperty | styleBlock)* '}'
+    | 'titre' ':' STRING ';'
+    | 'contenu' ':' STRING ';'
+    | 'image' ':' STRING ';'
+    | 'lien' ':' STRING ',' STRING ';'
     ;
 
 styleBlock
@@ -86,13 +94,14 @@ styleProperty
     ;
 
 ifStatement
-    : 'nekSi' '(' condition ')' block ('nekSinon' block)?
+    : 'nekSi' '(' condition ')' block ('nekSinonSi' '(' condition ')' block)* ('nekSinon' block)?
     ;
 
 condition
     : expression 'estEgal' expression
     | expression 'plusGrandQue' expression
     | expression 'plusPetitQue' expression
+    | expression
     ;
 
 loopStatement

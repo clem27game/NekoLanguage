@@ -1,78 +1,43 @@
-// Exemple de jeu simple en NekoScript
+// Exemple de jeu simple avec NekoScript
+nekImporter("nekjeu");
 
-// Importer la bibliothèque de jeu (fictive)
-nekImporter("NekoGame");
-
-// Configuration du jeu
-jeu = nekJeu.creer({
-    titre: "Chat Aventurier",
-    largeur: 800,
-    hauteur: 600,
-    couleurDeFond: "#87CEEB"
-});
-
-// Créer un personnage joueur
-joueur = nekCreerSprite("chat.png", 100, 300, 64, 64);
-
-// Créer un obstacle
-obstacle = nekCreerSprite("arbre.png", 500, 300, 100, 120);
-
-// Créer un objet à collecter
-objet = nekCreerSprite("poisson.png", 400, 200, 32, 32);
-
-// Variables du jeu
+// Création des sprites
+joueur = nekCreerSprite("joueur.png", 100, 100, 50, 50);
+obstacle = nekCreerSprite("obstacle.png", 300, 100, 30, 30);
 score = 0;
-vitesse = 5;
-partieTerminee = faux;
 
-// Fonction qui s'exécute à chaque frame
-nekJeu.chaqueTrame(function() {
-    // Effacer l'écran
-    nekJeu.effacer();
-    
-    // Dessiner le fond
-    nekJeu.dessinerFond();
-    
-    // Dessiner les sprites
-    nekJeu.dessiner(joueur);
-    nekJeu.dessiner(obstacle);
-    
-    nekSi(partieTerminee est faux) {
-        nekJeu.dessiner(objet);
-    }
-    
-    // Afficher le score
-    nekJeu.texte("Score: " + score, 20, 20, "20px Arial", "#000");
-    
-    // Gérer les entrées du joueur
-    nekSi(nekClavier.toucheAppuyee("droite")) {
-        joueur.x = joueur.x plus vitesse;
-    }
-    
-    nekSi(nekClavier.toucheAppuyee("gauche")) {
-        joueur.x = joueur.x moins vitesse;
-    }
-    
-    nekSi(nekClavier.toucheAppuyee("haut")) {
-        joueur.y = joueur.y moins vitesse;
-    }
-    
-    nekSi(nekClavier.toucheAppuyee("bas")) {
-        joueur.y = joueur.y plus vitesse;
-    }
-    
-    // Détecter les collisions
-    nekSi(nekDetecterCollision(joueur, objet)) {
-        score = score plus 10;
-        objet.x = nekAleatoire(50, 750);
-        objet.y = nekAleatoire(50, 550);
-    }
-    
-    nekSi(nekDetecterCollision(joueur, obstacle)) {
-        nekJeu.texte("Game Over!", 350, 300, "40px Arial", "#F00");
-        partieTerminee = vrai;
-    }
-});
+// Configuration des contrôles
+nekSurTouche("droite") {
+  nekBouger(joueur, 5, 0);
+}
 
-// Démarrer le jeu
-nekJeu.demarrer();
+nekSurTouche("gauche") {
+  nekBouger(joueur, -5, 0);
+}
+
+nekSurTouche("haut") {
+  nekBouger(joueur, 0, -5);
+}
+
+nekSurTouche("bas") {
+  nekBouger(joueur, 0, 5);
+}
+
+// Logique du jeu
+nekChaqueTrame() {
+  nekSi(nekDetecterCollision(joueur, obstacle)) {
+    neko = ("Collision détectée!");
+    score = score plus 1;
+    neko = ("Score: ");
+    compteneko = score;
+    
+    // Déplacement aléatoire de l'obstacle
+    nouvX = nekNombreAleatoire(50, 450);
+    nouvY = nekNombreAleatoire(50, 350);
+    nekPositionner(obstacle, nouvX, nouvY);
+  }
+}
+
+// Initialisation
+neko = ("Jeu démarré! Utilisez les flèches pour déplacer le joueur.");
+nekLancerJeu(60);

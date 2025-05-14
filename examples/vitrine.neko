@@ -1,0 +1,193 @@
+// NekoScript - Exemple complet de syntaxe
+// Ce fichier présente les fonctionnalités du langage NekoScript
+
+// === AFFICHAGE DE BASE ===
+neko = ("Bienvenue dans NekoScript - le langage de programmation en français!");
+neko = ("==========================================================");
+
+// === VARIABLES ===
+neko = ("Démonstration des variables:");
+nom = "NekoScript";
+version = 1.0;
+langageFrance = vrai;
+
+// === OPÉRATIONS MATHÉMATIQUES ===
+neko = ("");
+neko = ("Démonstration des opérations mathématiques:");
+neko = ("Addition: 10 + 5 =");
+compteneko = 10 plus 5;
+
+neko = ("Soustraction: 20 - 8 =");
+compteneko = 20 moins 8;
+
+neko = ("Multiplication: 6 * 7 =");
+compteneko = 6 multiplier 7;
+
+neko = ("Division: 100 / 4 =");
+compteneko = 100 diviser 4;
+
+// === FONCTIONS ===
+neko = ("");
+neko = ("Démonstration des fonctions:");
+
+nekSaluer(personne) {
+  neko = ("Bonjour " + personne + "! Comment ça va?");
+}
+
+nekSaluer("utilisateur");
+
+nekAdditionner(a, b) {
+  resultat = a plus b;
+  neko = ("Le résultat de " + a + " plus " + b + " est:");
+  compteneko = resultat;
+}
+
+nekAdditionner(15, 27);
+
+// === CONDITIONS ===
+neko = ("");
+neko = ("Démonstration des conditions:");
+
+age = 20;
+
+nekSi(age plusGrandQue 18) {
+  neko = ("Vous êtes majeur!");
+} nekSinon {
+  neko = ("Vous êtes mineur!");
+}
+
+temperature = 5;
+
+nekSi(temperature plusGrandQue 30) {
+  neko = ("Il fait très chaud!");
+} nekSinonSi(temperature plusGrandQue 20) {
+  neko = ("Il fait bon!");
+} nekSinonSi(temperature plusGrandQue 10) {
+  neko = ("Il fait frais!");
+} nekSinon {
+  neko = ("Il fait froid!");
+}
+
+// === BOUCLES ===
+neko = ("");
+neko = ("Démonstration des boucles:");
+
+nekBoucle(i de 1 à 5) {
+  neko = ("Itération numéro " + i);
+}
+
+// === TABLEAUX ===
+neko = ("");
+neko = ("Démonstration des tableaux:");
+
+fruits = nekTableau("pomme", "banane", "orange", "fraise");
+nekAjouterElement(fruits, "kiwi");
+
+nekBoucle(i de 0 à 4) {
+  fruit = nekObtenirElement(fruits, i);
+  neko = ("Fruit " + i + ": " + fruit);
+}
+
+// === CRÉATION D'UN SITE WEB ===
+neko = ("");
+neko = ("Voici comment créer un site web avec NekoScript:");
+neko = ("(Code commenté pour cet exemple)");
+
+/*
+nekImporter("neksite");
+
+neksite.créer {
+  page = "Accueil" {
+    style {
+      couleurFond: "#f5f5f5";
+      couleurTexte: "#333333";
+      police: "Arial, sans-serif";
+    }
+    
+    neksite.titre("Mon Site NekoScript");
+    neksite.paragraphe("Bienvenue sur mon site créé avec NekoScript!");
+    neksite.image("chat.jpg");
+    neksite.lien("À propos", "apropos.html");
+  }
+  
+  page = "À propos" {
+    style {
+      couleurFond: "#e0e0e0";
+      couleurTexte: "#333333";
+      police: "Arial, sans-serif";
+    }
+    
+    neksite.titre("À propos");
+    neksite.paragraphe("Cette page a été créée avec le langage NekoScript.");
+    neksite.lien("Retour à l'accueil", "index.html");
+  }
+}
+*/
+
+// === CRÉATION D'UN JEU SIMPLE ===
+neko = ("");
+neko = ("Voici comment créer un jeu simple avec NekoScript:");
+neko = ("(Code commenté pour cet exemple)");
+
+/*
+nekImporter("nekjeu");
+
+// Création des sprites
+joueur = nekCreerSprite("joueur.png", 100, 100, 50, 50);
+obstacle = nekCreerSprite("obstacle.png", 300, 100, 30, 30);
+
+nekSurTouche("droite") {
+  nekBouger(joueur, 5, 0);
+}
+
+nekSurTouche("gauche") {
+  nekBouger(joueur, -5, 0);
+}
+
+nekSurTouche("haut") {
+  nekBouger(joueur, 0, -5);
+}
+
+nekSurTouche("bas") {
+  nekBouger(joueur, 0, 5);
+}
+
+nekChaqueTrame() {
+  si(nekDetecterCollision(joueur, obstacle)) {
+    neko = ("Collision détectée!");
+  }
+}
+
+nekLancerJeu(60); // 60 images par seconde
+*/
+
+// === CRÉATION D'UN BOT DISCORD ===
+neko = ("");
+neko = ("Voici comment créer un bot Discord avec NekoScript:");
+neko = ("(Code commenté pour cet exemple)");
+
+/*
+nekImporter("nekdiscord");
+
+bot = nekCreerBot("TOKEN_DISCORD");
+
+nekSurMessage(bot, message) {
+  si(message.contenu estEgal "!bonjour") {
+    nekRepondre(message, "Bonjour! Je suis un bot créé avec NekoScript!");
+  }
+  
+  si(message.contenu estEgal "!aide") {
+    nekRepondre(message, "Commandes disponibles: !bonjour, !aide, !info");
+  }
+  
+  si(message.contenu estEgal "!info") {
+    nekRepondre(message, "Je suis un bot programmé en NekoScript, un langage en français!");
+  }
+}
+
+nekLancerBot(bot);
+*/
+
+neko = ("");
+neko = ("Fin de la démonstration de NekoScript!");
+neko = ("Pour plus d'informations, consultez la documentation.");

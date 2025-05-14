@@ -1,216 +1,142 @@
 document.addEventListener('DOMContentLoaded', function() {
-  // Initialize Feather icons
-  feather.replace();
-  
-  // Theme toggle
-  const themeToggle = document.getElementById('theme-toggle');
-  const featherIcon = themeToggle.querySelector('i');
-  
-  themeToggle.addEventListener('click', function() {
-    document.body.classList.toggle('dark-theme');
-    
-    if (document.body.classList.contains('dark-theme')) {
-      featherIcon.setAttribute('data-feather', 'sun');
-    } else {
-      featherIcon.setAttribute('data-feather', 'moon');
-    }
-    
-    feather.replace();
-    
-    // Save preference to localStorage
-    localStorage.setItem('theme', document.body.classList.contains('dark-theme') ? 'dark' : 'light');
-  });
-  
-  // Check for saved theme preference or prefer-color-scheme
-  const savedTheme = localStorage.getItem('theme');
-  const prefersDarkScheme = window.matchMedia('(prefers-color-scheme: dark)');
-  
-  if (savedTheme === 'dark' || (!savedTheme && prefersDarkScheme.matches)) {
-    document.body.classList.add('dark-theme');
-    featherIcon.setAttribute('data-feather', 'sun');
-    feather.replace();
-  }
-  
-  // Tabs
-  const tabButtons = document.querySelectorAll('.tab-btn');
-  const tabContents = document.querySelectorAll('.tab-pane');
-  
-  tabButtons.forEach(button => {
-    button.addEventListener('click', () => {
-      const tabId = button.getAttribute('data-tab');
-      
-      // Update active button
-      tabButtons.forEach(btn => btn.classList.remove('active'));
-      button.classList.add('active');
-      
-      // Update active content
-      tabContents.forEach(content => content.classList.remove('active'));
-      document.getElementById(tabId).classList.add('active');
-    });
-  });
-  
-  // Documentation tabs
-  const docLinks = document.querySelectorAll('.doc-link');
-  const docSections = document.querySelectorAll('.doc-section');
-  
-  docLinks.forEach(link => {
-    link.addEventListener('click', (e) => {
+  // Smooth scrolling for anchor links
+  document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    anchor.addEventListener('click', function(e) {
       e.preventDefault();
+      const targetId = this.getAttribute('href');
+      const targetElement = document.querySelector(targetId);
       
-      const sectionId = link.getAttribute('href').substring(1);
-      
-      // Update active link
-      docLinks.forEach(docLink => docLink.classList.remove('active'));
-      link.classList.add('active');
-      
-      // Update active section
-      docSections.forEach(section => section.classList.remove('active'));
-      document.getElementById(sectionId).classList.add('active');
+      if (targetElement) {
+        window.scrollTo({
+          top: targetElement.offsetTop - 70, // Offset for the fixed header
+          behavior: 'smooth'
+        });
+      }
     });
   });
+
+  // Code example highlighting
+  const codeExamples = document.querySelectorAll('.code-example pre code');
+  highlightNekoScriptCode(codeExamples);
+
+  // Interactive demo in the hero section if present
+  const demoContainer = document.getElementById('neko-live-demo');
+  if (demoContainer) {
+    initNekoScriptDemo(demoContainer);
+  }
+
+  // Add animation for feature cards
+  const featureCards = document.querySelectorAll('.feature-card');
+  animateOnScroll(featureCards, 'animate-fade-in');
+});
+
+function highlightNekoScriptCode(codeElements) {
+  // Simple syntax highlighting for NekoScript
+  codeElements.forEach(codeElement => {
+    let content = codeElement.textContent;
+    
+    // Highlight keywords
+    const keywords = ['neko', 'nekImporter', 'nek', 'plus', 'moins', 'multiplier', 'diviser', 'nekSi', 'nekSinon', 'nekSinonSi', 'nekBoucle', 'de', 'à', 'compteneko', 'est', 'estEgal', 'plusGrandQue', 'plusPetitQue', 'vrai', 'faux'];
+    
+    keywords.forEach(keyword => {
+      const regex = new RegExp(`\\b${keyword}\\b`, 'g');
+      content = content.replace(regex, `<span class="keyword">${keyword}</span>`);
+    });
+    
+    // Highlight strings
+    content = content.replace(/"([^"]*)"/g, '<span class="string">"$1"</span>');
+    
+    // Highlight comments
+    content = content.replace(/\/\/(.*)/g, '<span class="comment">// $1</span>');
+    
+    // Apply the highlighted HTML
+    codeElement.innerHTML = content;
+  });
+}
+
+function initNekoScriptDemo(container) {
+  // Create elements for the demo
+  const editorArea = document.createElement('div');
+  editorArea.className = 'neko-editor';
   
-  // Playground functionality
-  const runCodeButton = document.getElementById('run-code');
-  const playgroundOutput = document.getElementById('playground-output');
-  const clearOutputButton = document.getElementById('clear-output');
-  const examplesDropdown = document.getElementById('examples-dropdown');
-  const playgroundEditor = document.getElementById('playground-editor');
+  const codeTextarea = document.createElement('textarea');
+  codeTextarea.placeholder = 'Écrivez votre code NekoScript ici...';
+  codeTextarea.value = 'neko = ("Bonjour depuis NekoScript!");\nnom = "Chat";\nneko = ("Bonjour " + nom + "!");';
   
-  // Sample code examples
-  const codeExamples = {
-    hello: `// Un simple programme "Hello World" en NekoScript
-neko = ("Bonjour, chat!");
-
-// Déclarer une variable et l'afficher
-monNom = "NekoScript";
-neko = ("Je m'appelle " + monNom);
-
-// Faire des calculs avec compteneko
-compteneko = 5 plus 3;`,
-    
-    web: `// Exemple de création de site web en NekoScript
-neksite.créer, script {
-    contenu : ("Bienvenue sur mon site NekoScript!"),
-    titre : "Mon Premier Site",
-    lang : "fr",
-    couleur-de-fond : "#f0f0f0",
-    style {
-        corps : "font-family: Arial, sans-serif",
-        titres : "color: #333"
-    }
-    script {
-        nekAfficher("Site chargé!");
-    }
-}`,
-    
-    game: `// Exemple de jeu simple en NekoScript
-nekImporter("NekoGame");
-
-joueur = nekCreerSprite("chat.png", 100, 300, 64, 64);
-obstacle = nekCreerSprite("arbre.png", 500, 300, 100, 120);
-score = 0;
-
-nekJeu.chaqueTrame(function() {
-    nekJeu.effacer();
-    
-    nekSi(nekClavier.toucheAppuyee("droite")) {
-        joueur.x = joueur.x plus 5;
-    }
-    
-    nekSi(nekDetecterCollision(joueur, obstacle)) {
-        nekJeu.texte("Game Over!", 350, 300, "40px Arial", "#F00");
-    }
-});`
-  };
+  const runButton = document.createElement('button');
+  runButton.textContent = 'Exécuter';
+  runButton.className = 'neko-run-button';
   
-  // Load example code
-  examplesDropdown.addEventListener('change', function() {
-    const selectedExample = this.value;
-    if (selectedExample && codeExamples[selectedExample]) {
-      playgroundEditor.querySelector('code').textContent = codeExamples[selectedExample];
-    }
+  const outputArea = document.createElement('div');
+  outputArea.className = 'neko-output';
+  
+  // Append elements to container
+  editorArea.appendChild(codeTextarea);
+  container.appendChild(editorArea);
+  container.appendChild(runButton);
+  container.appendChild(outputArea);
+  
+  // Add event listener to the run button
+  runButton.addEventListener('click', function() {
+    simulateNekoScriptExecution(codeTextarea.value);
   });
   
-  // Run code button
-  runCodeButton.addEventListener('click', function() {
-    // Clear previous output
-    playgroundOutput.innerHTML = '';
-    
-    // Get code from editor
-    const code = playgroundEditor.querySelector('code').textContent;
-    
-    // Simulate execution
-    simulateNekoScriptExecution(code);
-  });
-  
-  // Clear output button
-  clearOutputButton.addEventListener('click', function() {
-    playgroundOutput.innerHTML = '';
-  });
-  
-  // Simulate NekoScript execution
+  // Function to simulate NekoScript execution
   function simulateNekoScriptExecution(code) {
-    // This is a simplified simulator for demo purposes
+    outputArea.innerHTML = '';
+    
+    // Simple simulation of NekoScript execution
     const lines = code.split('\n');
     
-    for (const line of lines) {
-      const trimmedLine = line.trim();
+    lines.forEach(line => {
+      if (line.trim() === '') return;
       
-      // Simple parsing for demonstration
-      if (trimmedLine.startsWith('neko = (')) {
-        // Extract message between quotes
-        const matches = trimmedLine.match(/neko = \("(.+?)"\);/);
-        if (matches && matches[1]) {
-          addOutputLine(matches[1]);
-        }
-      } else if (trimmedLine.startsWith('compteneko = ')) {
-        // Extract calculation
-        const calcMatch = trimmedLine.match(/compteneko = (\d+) (plus|moins|multiplier|diviser) (\d+);?/);
-        if (calcMatch) {
-          const num1 = parseInt(calcMatch[1]);
-          const operator = calcMatch[2];
-          const num2 = parseInt(calcMatch[3]);
-          let result;
-          
-          switch (operator) {
-            case 'plus':
-              result = num1 + num2;
-              break;
-            case 'moins':
-              result = num1 - num2;
-              break;
-            case 'multiplier':
-              result = num1 * num2;
-              break;
-            case 'diviser':
-              result = num1 / num2;
-              break;
+      // Simulate print statements
+      if (line.includes('neko = (')) {
+        const match = line.match(/neko = \("(.*)"\);/);
+        if (match && match[1]) {
+          addOutputLine(match[1]);
+        } else {
+          // Handle string concatenation
+          const concatMatch = line.match(/neko = \((.*)\);/);
+          if (concatMatch && concatMatch[1]) {
+            try {
+              // This is a simplified evaluation and would be much more complex in a real interpreter
+              const result = eval(concatMatch[1].replace(/\+/g, '+'));
+              addOutputLine(result);
+            } catch (e) {
+              addOutputLine('Erreur: Expression non valide');
+            }
           }
-          
-          addOutputLine(result.toString());
-        }
-      } else if (trimmedLine.startsWith('nekAfficher(')) {
-        // Extract message between quotes
-        const matches = trimmedLine.match(/nekAfficher\("(.+?)"\);/);
-        if (matches && matches[1]) {
-          addOutputLine(matches[1]);
-        }
-      } else if (trimmedLine.startsWith('neksite.créer')) {
-        addOutputLine('Site Web créé avec succès!');
-      } else if (trimmedLine.startsWith('nekImporter')) {
-        const matches = trimmedLine.match(/nekImporter\("(.+?)"\);/);
-        if (matches && matches[1]) {
-          addOutputLine(`Bibliothèque ${matches[1]} importée avec succès!`);
         }
       }
+      
+      // Add more simulations here for other NekoScript features
+    });
+    
+    if (outputArea.innerHTML === '') {
+      addOutputLine('Aucune sortie générée');
     }
   }
   
-  // Add a line to the output
   function addOutputLine(text) {
     const line = document.createElement('div');
-    line.className = 'output-line';
     line.textContent = text;
-    playgroundOutput.appendChild(line);
+    line.className = 'output-line';
+    outputArea.appendChild(line);
   }
-});
+}
+
+function animateOnScroll(elements, animationClass) {
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add(animationClass);
+      }
+    });
+  }, { threshold: 0.1 });
+  
+  elements.forEach(element => {
+    observer.observe(element);
+  });
+}

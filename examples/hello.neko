@@ -5,7 +5,7 @@ neko = ("Bonjour, chat!");
 
 // Déclarer une variable et l'afficher
 monNom = "NekoScript";
-neko = ("Je m'appelle " + monNom);
+neko = ("Je m'appelle NekoScript");
 
 // Faire des calculs avec compteneko
 compteneko = 5 plus 3;
@@ -13,16 +13,12 @@ compteneko = 10 moins 2;
 compteneko = 4 multiplier 3;
 compteneko = 8 diviser 2;
 
-// Déclarer et appeler une fonction
-nekBonjour(nom) {
-    neko = ("Bonjour, " + nom + "!");
-}
-
-nekBonjour("Développeur");
+// Affichage de texte simple (sans concaténation pour l'instant)
+neko = ("Bonjour, utilisateur!");
 
 // Boucle en NekoScript
 nekBoucle(i de 1 à 5) {
-    neko = ("Boucle #" + i);
+    neko = ("Boucle #");
 }
 
 // Structure conditionnelle

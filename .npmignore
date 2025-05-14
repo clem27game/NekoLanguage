@@ -1,0 +1,37 @@
+# Fichiers de développement
+.git
+.github
+node_modules
+npm-debug.log
+*.log
+*.tgz
+.DS_Store
+
+# Fichiers de test et de build
+test
+coverage
+.nyc_output
+.travis.yml
+.eslintrc
+.eslintignore
+.gitignore
+tsconfig.json
+
+# IDE files
+.idea
+.vscode
+*.sublime-*
+.replit
+replit.nix
+replit.sh
+.breakpoints
+
+# Documentation source
+/docs-src
+
+# Ressources de développement
+/examples/dev
+/src/grammar/*.modified.g4
+/src/test
+fix-antlr.sh
+test-antlr.js
