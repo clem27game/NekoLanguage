@@ -1,0 +1,40 @@
+// NekoScript - Exemple avec syntaxe compatible avec l'interpréteur actuel
+
+// Affichage de messages
+neko = ("Bienvenue dans NekoScript!");
+neko = ("=========================");
+
+// Déclaration de variables et affichage
+texte = "Bonjour tout le monde";
+neko = ("Texte stocké:");
+neko = (texte);  // Note: Ceci ne fonctionne pas encore parfaitement
+
+// Opérations mathématiques
+neko = ("Démonstration des opérations mathématiques:");
+
+neko = ("Addition: 5 + 3 =");
+compteneko = 5 plus 3;
+
+neko = ("Soustraction: 10 - 2 =");
+compteneko = 10 moins 2;
+
+neko = ("Multiplication: 4 * 3 =");
+compteneko = 4 multiplier 3;
+
+neko = ("Division: 8 / 2 =");
+compteneko = 8 diviser 2;
+
+// Exemples des structures plus avancées (commentées car pas encore supportées)
+/*
+nekSi(age plusGrandQue 18) {
+    neko = ("Vous êtes majeur!");
+} nekSinon {
+    neko = ("Vous êtes mineur!");
+}
+
+nekBoucle(i de 1 à 5) {
+    neko = ("Itération numéro " + i);
+}
+*/
+
+neko = ("Fin du programme");

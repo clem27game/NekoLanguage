@@ -1,0 +1,37 @@
+// Démo complète de NekoScript
+
+// Affichage de textes
+neko = ("=== DÉMO NEKOSCRIPT ===");
+neko = ("Ce langage a une syntaxe en français");
+
+// Variables
+nomUtilisateur = "Chat Programmeur";
+age = 3;
+poids = 4.5;
+
+// Affichage des variables (en séparé pour compatibilité)
+neko = ("Nom: ");
+neko = (nomUtilisateur);
+neko = ("Âge: ");
+neko = (age);
+neko = ("Poids: ");
+neko = (poids);
+
+// Calculs arithmétiques
+neko = ("=== CALCULS ===");
+compteneko = 10 plus 5; // → 15
+compteneko = 20 moins 7; // → 13
+compteneko = 6 multiplier 4; // → 24
+compteneko = 100 diviser 4; // → 25
+
+// Calculs avec variables (nécessite l'interprétation correcte)
+ageDouble = 2;
+compteneko = age multiplier ageDouble; // → 6
+
+// Exemple de bibliothèque standard (si implémenté)
+neko = ("=== FONCTIONS STANDARD ===");
+// nekArrondir(3.7) → 4
+// nekConcatener("chat", "mignon") → "chatmignon"
+// nekLongueur("nekoscript") → 10
+
+neko = ("=== FIN DE LA DÉMO ===");

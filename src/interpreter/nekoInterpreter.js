@@ -61,16 +61,31 @@ class NekoInterpreter extends NekoScriptVisitor {
 
   // Visit a parse tree produced by NekoScriptParser#PrintExpression
   visitPrintExpression(ctx) {
-    const str = ctx.STRING().getText().slice(1, -1); // Remove quotes
-    console.log(str);
-    return str;
+    try {
+      if (ctx.STRING()) {
+        const str = ctx.STRING().getText().slice(1, -1); // Remove quotes
+        console.log(str);
+        return str;
+      } else {
+        console.error("Erreur: Expression d'impression non valide");
+        return "";
+      }
+    } catch (error) {
+      console.error("Erreur dans l'impression:", error.message);
+      return "";
+    }
   }
   
   // Visit a parse tree produced by NekoScriptParser#PrintExpressionComplex
   visitPrintExpressionComplex(ctx) {
-    const result = this.visit(ctx.expression());
-    console.log(result);
-    return result;
+    try {
+      const result = this.visit(ctx.expression());
+      console.log(result);
+      return result;
+    } catch (error) {
+      console.error("Erreur dans l'expression d'impression:", error.message);
+      return null;
+    }
   }
   
   // Visit a parse tree produced by NekoScriptParser#StringConcatenation
@@ -125,8 +140,13 @@ class NekoInterpreter extends NekoScriptVisitor {
 
   // Visit a parse tree produced by NekoScriptParser#NumIdentifier
   visitNumIdentifier(ctx) {
-    const id = ctx.ID().getText();
-    return this.runtime.getVariable(id);
+    try {
+      const id = ctx.ID().getText();
+      return this.runtime.getVariable(id);
+    } catch (error) {
+      console.error(`Erreur avec la variable ${ctx.ID().getText()}: ${error.message}`);
+      return 0; // Valeur par défaut en cas d'erreur
+    }
   }
 
   // Visit a parse tree produced by NekoScriptParser#StringExpression
