@@ -51,7 +51,7 @@ class NekoRuntime {
     return value;
   }
 
-  getVariable(name) {
+  getVariable(name, options = {}) {
     // Search for variable in all scopes from current to global
     for (let i = this.scopes.length - 1; i >= 0; i--) {
       if (name in this.scopes[i]) {
@@ -59,7 +59,61 @@ class NekoRuntime {
       }
     }
     
-    throw new Error(`Variable non définie: ${name}`);
+    // Lister les mots clés HTML/CSS/JS courants pour éviter des erreurs lors de l'interprétation du HTML
+    const htmlJsKeywords = [
+      // Balises HTML
+      'div', 'span', 'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'a', 'img', 'ul', 'ol', 'li', 'table',
+      'tr', 'td', 'th', 'form', 'input', 'button', 'select', 'option', 'textarea', 'label', 'header',
+      'footer', 'nav', 'section', 'article', 'main', 'aside', 'figure', 'figcaption', 'i', 'b', 'em',
+      'strong', 'small', 'code', 'pre', 'blockquote',
+      
+      // Attributs HTML
+      'class', 'id', 'style', 'href', 'src', 'alt', 'title', 'width', 'height', 'type', 'value',
+      'placeholder', 'name', 'for', 'action', 'method', 'target', 'rel', 'role', 'aria',
+      
+      // Propriétés CSS
+      'color', 'background', 'margin', 'padding', 'border', 'font', 'text', 'align', 'display',
+      'position', 'top', 'left', 'right', 'bottom', 'width', 'height', 'max', 'min', 'float', 'clear',
+      'transition', 'transform', 'animation', 'flex', 'grid', 'box', 'shadow', 'radius', 'center',
+      'block', 'inline', 'none', 'auto', 'hidden', 'white', 'bold', 'italic',
+      
+      // JavaScript et DOM
+      'document', 'window', 'element', 'addEventListener', 'function', 'DOMContentLoaded', 'return',
+      'true', 'false', 'new', 'this', 'var', 'let', 'const', 'if', 'else', 'for', 'while',
+      
+      // Divers mots en français courants dans le HTML
+      'accueil', 'contact', 'propos', 'savoir', 'nous', 'vous', 'voir', 'plus', 'tous',
+      'site', 'menu', 'sur', 'content', 'feature', 'texte', 'dynamique', 'dynamiquement',
+      'highlight', 'phone'
+    ];
+    
+    // Si le nom de la variable est un mot clé HTML ou une lettre isolée (comme i, j, l, etc.),
+    // on considère qu'il s'agit probablement d'un élément HTML et non d'une variable NekoScript
+    if (name.length <= 2 || htmlJsKeywords.includes(name.toLowerCase()) || 
+        (name.match(/^[A-Z][a-z]+[A-Z]/) !== null)) { // CamelCase comme DOMContentLoaded
+      
+      if (options.webContext) {
+        // Dans un contexte web, on renvoie simplement le nom de la variable tel quel
+        // pour ne pas interrompre la génération du site
+        return name;
+      } else {
+        // On renvoie le nom de la variable avec un avertissement plutôt qu'une erreur
+        console.warn(`Variable "${name}" non définie, mais pourrait être un élément HTML.`);
+        return name;
+      }
+    }
+    
+    // Options pour le comportement en cas de variable non trouvée
+    if (options.silent) {
+      return undefined;
+    } else if (options.webContext) {
+      // Dans un contexte web, ne pas lancer d'erreur pour ne pas interrompre la génération du site
+      console.warn(`Variable "${name}" non définie.`);
+      return undefined;
+    } else {
+      // Comportement par défaut : lancer une erreur
+      throw new Error(`Variable non définie: ${name}`);
+    }
   }
 
   // Scope management

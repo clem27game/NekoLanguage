@@ -72,6 +72,14 @@ class NekoSiteHelper {
       // Créer un tableau pour stocker tous les remplacements à faire
       const replacements = [];
       
+      // Liste des mots clés HTML courants à ne pas considérer comme des erreurs
+      const htmlKeywords = [
+        'auteur', 'description', 'titre', 'contenu', 'style', 'class', 'cta',
+        'header', 'footer', 'nav', 'section', 'article', 'div', 'span', 'p',
+        'white', 'black', 'color', 'text', 'font', 'size', 'padding', 'margin',
+        'dynamique', 'dynamiquement', 'puissante', 'content', 'feature'
+      ];
+      
       // Collecter tous les remplacements sans modifier la chaîne
       while ((match = variablePattern.exec(text)) !== null) {
         const fullMatch = match[0]; // ${variableName}
@@ -80,8 +88,8 @@ class NekoSiteHelper {
         const endIndex = startIndex + fullMatch.length;
         
         try {
-          // Obtenir la valeur de la variable depuis le runtime
-          const value = this.runtime.getVariable(variableName);
+          // Obtenir la valeur de la variable depuis le runtime avec le contexte web
+          const value = this.runtime.getVariable(variableName, { webContext: true, silent: true });
           
           // Si la variable existe, prévoir son remplacement
           if (value !== undefined) {
@@ -92,6 +100,10 @@ class NekoSiteHelper {
               replacement: String(value),
               variableName
             });
+          } else if (htmlKeywords.includes(variableName.toLowerCase())) {
+            // Si c'est un mot-clé HTML, on laisse la variable telle quelle
+            // sans générer d'avertissement
+            continue;
           }
         } catch (error) {
           // En cas d'erreur, ignorer ce remplacement
