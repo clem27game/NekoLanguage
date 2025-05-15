@@ -103,7 +103,7 @@ class NekoSite {
     }
 
     // Si aucune page n'a été créée, créer une page d'accueil par défaut
-    if (this.pages.length === 0) {
+    if (this.pages.length === 0 && sitePages.length === 0) {
       this.createPage({
         title: "Accueil",
         content: "<h1>Site généré par NekoScript</h1><p>Ce site a été créé automatiquement. Aucune page n'a été spécifiée dans la configuration.</p>",
@@ -158,7 +158,9 @@ class NekoSite {
     }
 
     // Créer une configuration normalisée avec toutes les propriétés possibles
+    // Attention à ne pas écraser les propriétés d'origine
     const processedConfig = {
+      // Propriétés de base normalisées
       title: pageTitle,
       content: pageConfig.contenu || pageConfig.content || "",
       style: pageConfig.style || {},
@@ -169,9 +171,7 @@ class NekoSite {
       filename: pageConfig.filename || this.slugify(pageTitle) + '.html',
       navigation: pageConfig.navigation !== undefined ? pageConfig.navigation : true,
       template: pageConfig.template || "standard",
-      rawHtml: pageConfig.rawHtml || null,
-      // Autres propriétés personnalisées conservées pour l'utilisateur
-      ...pageConfig
+      rawHtml: pageConfig.rawHtml || null
     };
 
     // Traiter les liens
@@ -322,7 +322,9 @@ class NekoSite {
     const { title, content, style, links, scripts } = pageConfig;
     
     // Fusionner les styles de la page avec le thème global
-    const mergedStyle = { ...this.siteConfig.theme, ...style };
+    // Assurer que style est bien un objet pour éviter les erreurs
+    const pageStyle = typeof style === 'object' && style !== null ? style : {};
+    const mergedStyle = { ...this.siteConfig.theme, ...pageStyle };
 
     // Construire le CSS
     let cssStyles = '';
@@ -330,8 +332,18 @@ class NekoSite {
       cssStyles = Object.entries(mergedStyle).map(([key, value]) => {
         // Convertir camelCase en kebab-case pour le CSS
         const cssKey = key.replace(/([a-z0-9]|(?=[A-Z]))([A-Z])/g, '$1-$2').toLowerCase();
+        
+        // Extraire et transformer les propriétés CSS
+        // Pour les propriétés spécifiques au modèle, ne pas les inclure dans le CSS brut
+        if (key.startsWith('couleur') || key.startsWith('police') || 
+            key.startsWith('bordure') || key.startsWith('taille') || 
+            key.startsWith('marge') || key.startsWith('padding')) {
+          // Ces propriétés sont déjà appliquées dans le template CSS principal
+          return ``;
+        }
+        
         return `  ${cssKey}: ${value};`;
-      }).join('\n');
+      }).filter(line => line.trim() !== '').join('\n');
     }
     
     // Ajouter les styles CSS personnalisés de la page
@@ -449,7 +461,7 @@ ${metaTags}
       font-size: 0.8em;
       color: ${mergedStyle.couleurFooter || "#666666"};
     }
-${cssStyles}
+    ${cssStyles}
   </style>
 ${this.siteConfig.favicon ? `  <link rel="icon" href="${this.siteConfig.favicon}">` : ''}
 </head>
