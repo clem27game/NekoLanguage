@@ -56,8 +56,14 @@ class NekoSite {
    * @param {Object} config - Configuration du site web fournie par l'utilisateur
    */
   créer(config) {
+    // Stocker la configuration originale pour référence
+    this.originalConfig = JSON.parse(JSON.stringify(config));
+    
     // Créer le répertoire de sortie s'il n'existe pas
     this.ensureOutputDirectory();
+    
+    // Remplacer les variables par leurs valeurs dans la configuration entière
+    config = this.processVariables(config);
     
     // Configuration globale du site
     this.siteConfig = {
@@ -598,6 +604,72 @@ ${footerHTML}
     if (!fs.existsSync(this.outputDir)) {
       fs.mkdirSync(this.outputDir, { recursive: true });
     }
+  }
+
+  /**
+   * Traite les variables utilisateur dans la configuration
+   * Remplace toutes les références à des variables par leur valeur
+   * @param {Object} config - Configuration fournie par l'utilisateur
+   * @returns {Object} - Configuration avec variables remplacées
+   */
+  processVariables(config) {
+    // Si config n'est pas un objet, le retourner tel quel
+    if (!config || typeof config !== 'object') {
+      return config;
+    }
+    
+    const result = {};
+    
+    // Parcourir récursivement l'objet config pour remplacer les variables
+    for (const key in config) {
+      if (Object.prototype.hasOwnProperty.call(config, key)) {
+        const value = config[key];
+        
+        if (typeof value === 'string') {
+          // Chercher toutes les références de type ${variableName}
+          const variablePattern = /\${([^}]+)}/g;
+          let processedValue = value;
+          let match;
+          
+          // Remplacer toutes les variables par leur valeur
+          while ((match = variablePattern.exec(value)) !== null) {
+            const fullMatch = match[0]; // ${variableName}
+            const variableName = match[1]; // variableName
+            
+            try {
+              // Chercher la valeur de la variable dans le runtime
+              const variableValue = this.runtime.getVariable(variableName);
+              
+              // Remplacer la référence par la valeur
+              if (variableValue !== undefined) {
+                const valueStr = String(variableValue);
+                processedValue = processedValue.replace(fullMatch, valueStr);
+              }
+            } catch (error) {
+              console.warn(`Variable "${variableName}" non définie dans le site web, laissée telle quelle.`);
+            }
+          }
+          
+          result[key] = processedValue;
+        } else if (Array.isArray(value)) {
+          // Traiter les tableaux récursivement
+          result[key] = value.map(item => {
+            if (typeof item === 'object') {
+              return this.processVariables(item);
+            }
+            return item;
+          });
+        } else if (typeof value === 'object' && value !== null) {
+          // Traiter les objets récursivement
+          result[key] = this.processVariables(value);
+        } else {
+          // Garder les autres types de valeurs tels quels
+          result[key] = value;
+        }
+      }
+    }
+    
+    return result;
   }
 
   /**
