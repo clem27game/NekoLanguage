@@ -1,6 +1,7 @@
 /**
  * Module NekoSite pour NekoScript
  * Permet la création simplifiée de sites web avec serveur localhost intégré
+ * Entièrement personnalisable par l'utilisateur
  */
 
 const fs = require('fs');
@@ -17,18 +18,67 @@ class NekoSite {
     this.outputDir = './site-output';
     this.port = 5000; // Port unique pour le serveur localhost
     this.server = null;
+    
+    // Thèmes prédéfinis que l'utilisateur peut modifier
+    this.themes = {
+      clair: {
+        couleurFond: "#f9f9f9",
+        couleurTexte: "#333333",
+        couleurTitre: "#222222",
+        couleurLien: "#0066cc",
+        police: "Arial, sans-serif",
+        bordureRayon: "8px",
+        bordureCouleur: "#eaeaea"
+      },
+      sombre: {
+        couleurFond: "#222222",
+        couleurTexte: "#f0f0f0",
+        couleurTitre: "#ffffff",
+        couleurLien: "#5599ff",
+        police: "Arial, sans-serif",
+        bordureRayon: "8px",
+        bordureCouleur: "#444444"
+      },
+      coloré: {
+        couleurFond: "#fcf4e8",
+        couleurTexte: "#4e3620",
+        couleurTitre: "#c27c3d",
+        couleurLien: "#d95525",
+        police: "Georgia, serif",
+        bordureRayon: "12px",
+        bordureCouleur: "#e6c9a8"
+      }
+    };
   }
 
   /**
    * Crée un nouveau site web avec les pages spécifiées et démarre un serveur
-   * @param {Object} config - Configuration du site web
+   * @param {Object} config - Configuration du site web fournie par l'utilisateur
    */
   créer(config) {
     // Créer le répertoire de sortie s'il n'existe pas
     this.ensureOutputDirectory();
+    
+    // Configuration globale du site
+    this.siteConfig = {
+      titre: config.titre || "Site NekoScript",
+      description: config.description || "Site créé avec NekoScript",
+      auteur: config.auteur || "Utilisateur NekoScript",
+      langue: config.langue || "fr",
+      theme: config.theme ? (this.themes[config.theme] || this.themes.clair) : this.themes.clair,
+      favicon: config.favicon || null,
+      stylePersonnalisé: config.stylePersonnalisé || "",
+      scriptPersonnalisé: config.scriptPersonnalisé || "",
+      avecNav: config.avecNav !== undefined ? config.avecNav : true,
+      avecFooter: config.avecFooter !== undefined ? config.avecFooter : true,
+      footerTexte: config.footerTexte || "Site généré avec NekoScript",
+      ...config // Inclure toutes les autres propriétés personnalisées
+    };
 
     // Extraire les pages du config
     let sitePages = [];
+    
+    // Traiter les pages selon la structure fournie par l'utilisateur
     if (config.page) {
       // Si config.page est un objet unique (une seule page)
       sitePages.push(this.processPageConfig(config.page));
@@ -36,10 +86,13 @@ class NekoSite {
       // Si config.pages est un tableau de pages
       sitePages = config.pages.map(page => this.processPageConfig(page));
     } else {
-      // Fallback - chercher les pages dans le config
+      // Chercher toutes les déclarations de page dans le config
       for (const key in config) {
-        if (typeof config[key] === 'object' && config[key].titre) {
-          sitePages.push(this.processPageConfig(config[key], key));
+        const value = config[key];
+        // Une page est un objet qui contient au moins titre ou contenu
+        if (typeof value === 'object' && (value.titre || value.contenu)) {
+          const pageName = key.startsWith('page') ? key.replace('page', '').trim() : key;
+          sitePages.push(this.processPageConfig(value, pageName));
         }
       }
     }
@@ -53,12 +106,19 @@ class NekoSite {
     if (this.pages.length === 0) {
       this.createPage({
         title: "Accueil",
-        content: "<h1>Site généré par NekoScript</h1><p>Ce site a été créé automatiquement.</p>",
-        style: { backgroundColor: "#f5f5f5" }
+        content: "<h1>Site généré par NekoScript</h1><p>Ce site a été créé automatiquement. Aucune page n'a été spécifiée dans la configuration.</p>",
+        style: {}
       });
     }
 
     // Gérer les assets (images, etc.)
+    if (config.assets && Array.isArray(config.assets)) {
+      for (const asset of config.assets) {
+        this.assets.push(asset);
+      }
+    }
+    
+    // Gérer les images mentionnées dans les pages
     for (const asset of this.assets) {
       this.copyAsset(asset);
     }
@@ -69,7 +129,12 @@ class NekoSite {
     // Démarrer le serveur local
     this.startServer();
 
-    return { success: true, pageCount: this.pages.length, port: this.port };
+    return { 
+      success: true, 
+      pageCount: this.pages.length, 
+      port: this.port,
+      outputDir: this.outputDir
+    };
   }
 
   /**
@@ -79,48 +144,131 @@ class NekoSite {
    * @returns {Object} - Configuration normalisée
    */
   processPageConfig(pageConfig, defaultTitle = "Page") {
+    // Si pageConfig est une chaîne de caractères, on la considère comme le titre
+    if (typeof pageConfig === 'string') {
+      pageConfig = { titre: pageConfig };
+    }
+    
+    // Extraire le titre soit de la propriété "titre", soit du nom par défaut
+    let pageTitle = pageConfig.titre || defaultTitle;
+    
+    // Si le nom par défaut est numérique (page1, page2...), utiliser "Page X"
+    if (defaultTitle.match(/^\d+$/)) {
+      pageTitle = pageConfig.titre || `Page ${defaultTitle}`;
+    }
+
+    // Créer une configuration normalisée avec toutes les propriétés possibles
     const processedConfig = {
-      title: pageConfig.titre || defaultTitle,
-      content: pageConfig.contenu || "",
+      title: pageTitle,
+      content: pageConfig.contenu || pageConfig.content || "",
       style: pageConfig.style || {},
       links: [],
-      images: []
+      images: [],
+      scripts: pageConfig.scripts || pageConfig.script || "",
+      meta: pageConfig.meta || {},
+      filename: pageConfig.filename || this.slugify(pageTitle) + '.html',
+      navigation: pageConfig.navigation !== undefined ? pageConfig.navigation : true,
+      template: pageConfig.template || "standard",
+      rawHtml: pageConfig.rawHtml || null,
+      // Autres propriétés personnalisées conservées pour l'utilisateur
+      ...pageConfig
     };
 
-    // Chercher les liens
+    // Traiter les liens
     if (pageConfig.lien) {
-      if (Array.isArray(pageConfig.lien)) {
-        for (const link of pageConfig.lien) {
-          if (typeof link === 'string') {
-            processedConfig.links.push({ text: link, url: this.slugify(link) + '.html' });
-          } else if (Array.isArray(link) && link.length >= 2) {
-            processedConfig.links.push({ text: link[0], url: link[1] });
-          }
-        }
-      } else if (typeof pageConfig.lien === 'string') {
-        processedConfig.links.push({ text: pageConfig.lien, url: this.slugify(pageConfig.lien) + '.html' });
-      }
+      this.processLinks(pageConfig.lien, processedConfig);
+    }
+    
+    if (pageConfig.liens) {
+      this.processLinks(pageConfig.liens, processedConfig);
     }
 
-    // Chercher les images
+    // Traiter les images
     if (pageConfig.image) {
-      if (Array.isArray(pageConfig.image)) {
-        processedConfig.images = pageConfig.image;
-      } else {
-        processedConfig.images.push(pageConfig.image);
-      }
+      this.processImages(pageConfig.image, processedConfig);
+    }
+    
+    if (pageConfig.images) {
+      this.processImages(pageConfig.images, processedConfig);
     }
 
-    // Traiter le style
+    // Traiter le style CSS
     if (pageConfig.style && typeof pageConfig.style === 'object') {
-      // Convertir les propriétés du style
-      for (const key in pageConfig.style) {
-        const value = pageConfig.style[key];
-        processedConfig.style[key] = value;
-      }
+      // Conserver toutes les propriétés de style
+      processedConfig.style = { ...pageConfig.style };
+    }
+    
+    // Permettre d'utiliser une feuille de style CSS personnalisée
+    if (pageConfig.styleCSS) {
+      processedConfig.styleCSS = pageConfig.styleCSS;
     }
 
     return processedConfig;
+  }
+  
+  /**
+   * Traite les liens d'une page
+   */
+  processLinks(linkData, processedConfig) {
+    if (Array.isArray(linkData)) {
+      for (const link of linkData) {
+        if (typeof link === 'string') {
+          processedConfig.links.push({ 
+            text: link, 
+            url: this.slugify(link) + '.html' 
+          });
+        } else if (Array.isArray(link) && link.length >= 2) {
+          processedConfig.links.push({ 
+            text: link[0], 
+            url: link[1] 
+          });
+        } else if (typeof link === 'object' && link.texte) {
+          processedConfig.links.push({ 
+            text: link.texte || link.text, 
+            url: link.url || this.slugify(link.texte || link.text) + '.html',
+            target: link.target || '_self',
+            class: link.class || '',
+            id: link.id || ''
+          });
+        }
+      }
+    } else if (typeof linkData === 'string') {
+      processedConfig.links.push({ 
+        text: linkData, 
+        url: this.slugify(linkData) + '.html' 
+      });
+    } else if (typeof linkData === 'object' && linkData.texte) {
+      processedConfig.links.push({ 
+        text: linkData.texte || linkData.text, 
+        url: linkData.url || this.slugify(linkData.texte || linkData.text) + '.html',
+        target: linkData.target || '_self',
+        class: linkData.class || '',
+        id: linkData.id || ''
+      });
+    }
+  }
+  
+  /**
+   * Traite les images d'une page
+   */
+  processImages(imageData, processedConfig) {
+    if (Array.isArray(imageData)) {
+      for (const image of imageData) {
+        if (typeof image === 'string') {
+          processedConfig.images.push(image);
+          this.assets.push(image);
+        } else if (typeof image === 'object' && image.src) {
+          processedConfig.images.push(image.src);
+          this.assets.push(image.src);
+        }
+      }
+    } else if (typeof imageData === 'string') {
+      processedConfig.images.push(imageData);
+      this.assets.push(imageData);
+    } else if (typeof imageData === 'object' && imageData.src) {
+      processedConfig.images.push(imageData.src);
+      this.assets.push(imageData.src);
+    }
   }
 
   /**
@@ -128,95 +276,159 @@ class NekoSite {
    * @param {Object} pageConfig - Configuration de la page
    */
   createPage(pageConfig) {
-    const { title, content, style, links, images } = pageConfig;
-    const filename = this.slugify(title) + '.html';
+    // Utiliser le nom de fichier spécifié ou en créer un à partir du titre
+    const filename = pageConfig.filename || this.slugify(pageConfig.title) + '.html';
     const filepath = path.join(this.outputDir, filename);
+    
+    // Si l'utilisateur a fourni du HTML brut, l'utiliser tel quel
+    if (pageConfig.rawHtml) {
+      try {
+        fs.writeFileSync(filepath, pageConfig.rawHtml);
+        console.log(`Page créée (HTML brut): ${filepath}`);
+        this.pages.push({ 
+          title: pageConfig.title, 
+          path: filepath, 
+          filename: filename 
+        });
+        return;
+      } catch (error) {
+        console.error(`Erreur lors de la création de la page ${pageConfig.title} (HTML brut):`, error);
+      }
+    }
 
-    // Compiler le HTML
+    // Sinon, compiler le HTML à partir de la config
     const html = this.generateHTML(pageConfig);
 
     // Écrire le fichier
     try {
       fs.writeFileSync(filepath, html);
       console.log(`Page créée: ${filepath}`);
-      this.pages.push({ title, path: filepath, filename });
+      this.pages.push({ 
+        title: pageConfig.title, 
+        path: filepath, 
+        filename: filename 
+      });
     } catch (error) {
-      console.error(`Erreur lors de la création de la page ${title}:`, error);
-    }
-
-    // Ajouter les images aux assets à copier
-    if (images && Array.isArray(images)) {
-      for (const image of images) {
-        this.assets.push(image);
-      }
+      console.error(`Erreur lors de la création de la page ${pageConfig.title}:`, error);
     }
   }
 
   /**
-   * Génère le HTML d'une page
+   * Génère le HTML d'une page en fonction de la configuration utilisateur
    * @param {Object} pageConfig - Configuration de la page
    * @returns {string} - Code HTML généré
    */
   generateHTML(pageConfig) {
-    const { title, content, style, links, script } = pageConfig;
+    const { title, content, style, links, scripts } = pageConfig;
+    
+    // Fusionner les styles de la page avec le thème global
+    const mergedStyle = { ...this.siteConfig.theme, ...style };
 
     // Construire le CSS
     let cssStyles = '';
-    if (style) {
-      cssStyles = Object.entries(style).map(([key, value]) => {
+    if (mergedStyle) {
+      cssStyles = Object.entries(mergedStyle).map(([key, value]) => {
         // Convertir camelCase en kebab-case pour le CSS
         const cssKey = key.replace(/([a-z0-9]|(?=[A-Z]))([A-Z])/g, '$1-$2').toLowerCase();
         return `  ${cssKey}: ${value};`;
       }).join('\n');
     }
+    
+    // Ajouter les styles CSS personnalisés de la page
+    if (pageConfig.styleCSS) {
+      cssStyles += '\n' + pageConfig.styleCSS;
+    }
+    
+    // Ajouter les styles CSS globaux personnalisés
+    if (this.siteConfig.stylePersonnalisé) {
+      cssStyles += '\n' + this.siteConfig.stylePersonnalisé;
+    }
 
-    // Construire les liens
+    // Construire les liens de navigation
     let linksHTML = '';
-    if (links && Array.isArray(links)) {
+    if (this.siteConfig.avecNav && links && Array.isArray(links)) {
       linksHTML = links.map(link => {
-        return `<a href="${link.url}">${link.text}</a>`;
+        const target = link.target ? ` target="${link.target}"` : '';
+        const cls = link.class ? ` class="${link.class}"` : '';
+        const id = link.id ? ` id="${link.id}"` : '';
+        return `<a href="${link.url}"${target}${cls}${id}>${link.text}</a>`;
       }).join('\n  ');
     }
 
-    // Ajouter les liens vers toutes les autres pages du site
-    const otherPagesLinks = this.pages
-      .filter(page => this.slugify(page.title) !== this.slugify(title)) // Exclure la page courante
-      .map(page => `<a href="${page.filename}">${page.title}</a>`)
-      .join('\n  ');
+    // Ajouter les liens vers les autres pages seulement si navigation activée
+    if (this.siteConfig.avecNav && pageConfig.navigation) {
+      const otherPagesLinks = this.pages
+        .filter(page => page.filename !== (pageConfig.filename || this.slugify(title) + '.html'))
+        .map(page => `<a href="${page.filename}">${page.title}</a>`)
+        .join('\n  ');
+      
+      if (otherPagesLinks) {
+        if (linksHTML) linksHTML += '\n  ';
+        linksHTML += otherPagesLinks;
+      }
+    }
     
-    if (otherPagesLinks) {
-      if (linksHTML) linksHTML += '\n  ';
-      linksHTML += otherPagesLinks;
+    // Construire les métadonnées
+    let metaTags = '';
+    if (pageConfig.meta) {
+      for (const [name, content] of Object.entries(pageConfig.meta)) {
+        metaTags += `  <meta name="${name}" content="${content}">\n`;
+      }
+    }
+    
+    // Ajouter les métadonnées globales du site
+    metaTags += `  <meta name="description" content="${this.siteConfig.description}">\n`;
+    metaTags += `  <meta name="author" content="${this.siteConfig.auteur}">\n`;
+    
+    // Générer le footer si activé
+    let footerHTML = '';
+    if (this.siteConfig.avecFooter) {
+      footerHTML = `
+    <footer>
+      ${this.siteConfig.footerTexte}
+    </footer>`;
+    }
+    
+    // Scripts personnalisés
+    let scriptContent = 'console.log("Site généré par NekoScript");';
+    if (scripts) {
+      scriptContent += '\n    ' + scripts;
+    }
+    if (this.siteConfig.scriptPersonnalisé) {
+      scriptContent += '\n    ' + this.siteConfig.scriptPersonnalisé;
     }
 
-    // Construire le HTML
+    // Construire le HTML final
     return `<!DOCTYPE html>
-<html lang="fr">
+<html lang="${this.siteConfig.langue}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${title}</title>
+${metaTags}
+  <title>${title} - ${this.siteConfig.titre}</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
+      font-family: ${mergedStyle.police || "Arial, sans-serif"};
       margin: 0;
       padding: 20px;
       line-height: 1.6;
+      background-color: ${mergedStyle.couleurFond || "#f9f9f9"};
+      color: ${mergedStyle.couleurTexte || "#333333"};
     }
     .container {
       max-width: 800px;
       margin: 0 auto;
       padding: 20px;
-      background-color: #f9f9f9;
-      border-radius: 8px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      background-color: ${mergedStyle.couleurContenuFond || "#ffffff"};
+      border-radius: ${mergedStyle.bordureRayon || "8px"};
+      box-shadow: 0 2px 4px ${mergedStyle.bordureCouleur || "rgba(0,0,0,0.1)"};
     }
-    h1 {
-      color: #333;
+    h1, h2, h3, h4, h5, h6 {
+      color: ${mergedStyle.couleurTitre || "#222222"};
       margin-top: 0;
     }
     a {
-      color: #0066cc;
+      color: ${mergedStyle.couleurLien || "#0066cc"};
       text-decoration: none;
       margin-right: 15px;
     }
@@ -235,10 +447,11 @@ class NekoSite {
       margin-top: 20px;
       text-align: center;
       font-size: 0.8em;
-      color: #666;
+      color: ${mergedStyle.couleurFooter || "#666666"};
     }
 ${cssStyles}
   </style>
+${this.siteConfig.favicon ? `  <link rel="icon" href="${this.siteConfig.favicon}">` : ''}
 </head>
 <body>
   <div class="container">
@@ -246,20 +459,15 @@ ${cssStyles}
     <div class="content">
       ${content}
     </div>
-    
+    ${this.siteConfig.avecNav && linksHTML ? `
     <div class="nav">
       ${linksHTML}
-    </div>
-    
-    <footer>
-      Site généré par NekoScript - Un langage de programmation en français
-    </footer>
+    </div>` : ''}
+${footerHTML}
   </div>
   
   <script>
-    // Script NekoScript
-    console.log('Site généré par NekoScript');
-    ${script || ''}
+    ${scriptContent}
   </script>
 </body>
 </html>`;
