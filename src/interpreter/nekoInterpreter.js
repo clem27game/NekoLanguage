@@ -314,49 +314,124 @@ class NekoInterpreter extends NekoScriptVisitor {
 
   // Visit a parse tree produced by NekoScriptParser#webSiteDeclaration
   visitWebSiteDeclaration(ctx) {
-    const websiteConfig = {
-      title: '',
-      content: '',
-      lang: 'fr',
-      backgroundColor: '#ffffff',
-      styles: {},
-      scripts: []
-    };
+    // Récupérer notre instance de module neksite
+    const neksite = this.runtime.getVariable('neksite');
     
-    const properties = ctx.webSiteBlock().webSiteProperty();
-    
-    for (const prop of properties) {
-      if (prop.getText().startsWith('contenu')) {
-        websiteConfig.content = prop.STRING().getText().slice(1, -1);
-      } else if (prop.getText().startsWith('titre')) {
-        websiteConfig.title = prop.STRING().getText().slice(1, -1);
-      } else if (prop.getText().startsWith('lang')) {
-        websiteConfig.lang = prop.STRING().getText().slice(1, -1);
-      } else if (prop.getText().startsWith('couleur-de-fond')) {
-        websiteConfig.backgroundColor = prop.STRING().getText().slice(1, -1);
-      } else if (prop.styleBlock()) {
-        const styleProps = prop.styleBlock().styleProperty();
-        for (const styleProp of styleProps) {
-          const key = styleProp.ID().getText();
-          const value = styleProp.STRING() 
-            ? styleProp.STRING().getText().slice(1, -1)
-            : styleProp.NUMBER().getText();
-          websiteConfig.styles[key] = value;
-        }
-      } else if (prop.getText().startsWith('script')) {
-        // Store the script block context to evaluate it later
-        websiteConfig.scripts.push(prop.block());
-      }
+    if (!neksite) {
+      throw new Error("Le module 'neksite' n'a pas été importé. Utilisez 'nekImporter(\"neksite\")' avant de créer un site web.");
     }
     
-    // Generate HTML
-    const html = this.generateHTML(websiteConfig);
+    const websiteConfig = {};
+    const pages = [];
     
-    // In a real implementation, this would create an HTML file or serve it
-    console.log("Site web créé :");
-    console.log(html);
+    // Traiter les blocs de site web de manière plus flexible
+    try {
+      // Si nous avons un webSiteBlock
+      if (ctx.webSiteBlock() && ctx.webSiteBlock().children) {
+        // Parcourir les propriétés qui seront des paires page=nom {...}
+        for (const child of ctx.webSiteBlock().children) {
+          // Si c'est une déclaration de page
+          if (child.getText().includes('page=')) {
+            const pageText = child.getText();
+            const pageTitleMatch = pageText.match(/page\s*=\s*["']([^"']*)["']/);
+            const pageTitle = pageTitleMatch ? pageTitleMatch[1] : "Page sans titre";
+            
+            // Créer un objet page avec les propriétés de base
+            const pageConfig = {
+              titre: pageTitle,
+              contenu: "",
+              style: {}
+            };
+            
+            // Extraire les propriétés de la page
+            const pageContent = pageText.substring(pageText.indexOf('{') + 1, pageText.lastIndexOf('}'));
+            
+            // Analyser le contenu pour en extraire les propriétés
+            const contentProps = pageContent.split(';');
+            for (const prop of contentProps) {
+              const trimmedProp = prop.trim();
+              
+              if (trimmedProp.startsWith('titre:')) {
+                pageConfig.titre = this.extractStringValue(trimmedProp.substring(6));
+              } else if (trimmedProp.startsWith('contenu:')) {
+                pageConfig.contenu = this.extractStringValue(trimmedProp.substring(8));
+              } else if (trimmedProp.startsWith('style') && trimmedProp.includes('{')) {
+                const styleContent = trimmedProp.substring(trimmedProp.indexOf('{') + 1, trimmedProp.lastIndexOf('}'));
+                const styleProps = styleContent.split(';');
+                
+                for (const styleProp of styleProps) {
+                  const trimmedStyleProp = styleProp.trim();
+                  if (trimmedStyleProp) {
+                    const [key, value] = trimmedStyleProp.split(':').map(s => s.trim());
+                    if (key && value) {
+                      pageConfig.style[key] = this.extractStringValue(value);
+                    }
+                  }
+                }
+              } else if (trimmedProp.startsWith('lien:')) {
+                if (!pageConfig.lien) pageConfig.lien = [];
+                
+                // Extraire les valeurs pour lien: "texte", "url";
+                const linkValues = trimmedProp.substring(5).split(',').map(s => s.trim());
+                if (linkValues.length >= 1) {
+                  pageConfig.lien.push(this.extractStringValue(linkValues[0]));
+                }
+              } else if (trimmedProp.startsWith('image:')) {
+                if (!pageConfig.image) pageConfig.image = [];
+                pageConfig.image.push(this.extractStringValue(trimmedProp.substring(6)));
+              }
+            }
+            
+            pages.push(pageConfig);
+          }
+        }
+      }
+      
+      // Ajouter les pages au config
+      websiteConfig.pages = pages;
+      
+      // Créer le site
+      const result = neksite.créer(websiteConfig);
+      console.log(`Site web créé avec ${result.pageCount} pages.`);
+      
+      return result;
+    } catch (error) {
+      console.error("Erreur lors de la création du site web:", error);
+      
+      // Fallback: créer un site minimal
+      try {
+        const fallbackConfig = {
+          pages: [{
+            titre: "Site NekoScript",
+            contenu: "<h1>Site généré par NekoScript</h1><p>Une erreur s'est produite lors de la création du site. Voici une page de secours.</p>",
+            style: { backgroundColor: "#f8f8f8" }
+          }]
+        };
+        
+        return neksite.créer(fallbackConfig);
+      } catch (fallbackError) {
+        console.error("Erreur avec la création du site de secours:", fallbackError);
+        return null;
+      }
+    }
+  }
+  
+  /**
+   * Extrait une valeur de chaîne de caractères en enlevant les guillemets
+   * @param {string} value - La valeur à traiter
+   * @returns {string} - La valeur sans guillemets
+   */
+  extractStringValue(value) {
+    if (!value) return "";
+    const trimmed = value.trim();
     
-    return websiteConfig;
+    // Si la valeur est entre guillemets (simples ou doubles)
+    if ((trimmed.startsWith('"') && trimmed.endsWith('"')) || 
+        (trimmed.startsWith("'") && trimmed.endsWith("'"))) {
+      return trimmed.substring(1, trimmed.length - 1);
+    }
+    
+    return trimmed;
   }
 
   generateHTML(config) {

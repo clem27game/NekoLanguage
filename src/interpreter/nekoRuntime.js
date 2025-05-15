@@ -66,19 +66,44 @@ class NekoRuntime {
       return; // Already loaded
     }
     
-    // Check if library exists
     try {
-      const libraryPath = path.join(this.librariesDir, `${name}.neko`);
-      
-      if (!fs.existsSync(libraryPath)) {
-        throw new Error(`Bibliothèque non trouvée: ${name}`);
+      let library;
+
+      // D'abord, on vérifie si c'est un module interne
+      if (name === 'neksite') {
+        // Import du module neksite depuis src/modules
+        const { NekoSite } = require('../modules/neksite');
+        library = { neksite: new NekoSite(this) };
+        console.log(`Module interne importé: ${name}`);
+      } else {
+        // Ensuite, on cherche un fichier .neko standard
+        const libraryPath = path.join(this.librariesDir, `${name}.neko`);
+        
+        if (fs.existsSync(libraryPath)) {
+          // Bibliothèque .neko (à implémenter pour une vraie interprétation)
+          console.log(`Bibliothèque .neko importée: ${name}`);
+          library = {}; // Placeholder pour le contenu de la bibliothèque
+        } else {
+          // Enfin, on essaie d'importer un module Node.js
+          try {
+            const nodeModule = require(name);
+            library = { ['nek' + name]: nodeModule };
+            console.log(`Module Node.js importé: ${name}`);
+          } catch (nodeError) {
+            throw new Error(`Bibliothèque "${name}" introuvable (ni en interne, ni comme fichier .neko, ni comme module Node.js)`);
+          }
+        }
       }
       
       // Mark as loaded to prevent circular imports
       this.libraries.add(name);
       
-      // In a real implementation, we would parse and execute the library code here
-      console.log(`Bibliothèque importée: ${name}`);
+      // Ajouter les fonctions et objets de la bibliothèque au scope global
+      if (library) {
+        for (const [key, value] of Object.entries(library)) {
+          this.setVariable(key, value);
+        }
+      }
       
     } catch (error) {
       console.error(`Erreur lors de l'importation de la bibliothèque ${name}:`, error);

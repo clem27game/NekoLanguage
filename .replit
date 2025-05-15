@@ -36,6 +36,10 @@ args = "tester-demo"
 task = "workflow.run"
 args = "tester-demo-rapide"
 
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "tester-site"
+
 [[workflows.workflow]]
 name = "NekoScript"
 author = "agent"
@@ -85,5 +89,18 @@ author = "agent"
 task = "shell.exec"
 args = "node src/index.js exécuter examples/demo-rapide.neko"
 
+[[workflows.workflow]]
+name = "tester-site"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "node src/index.js exécuter examples/site-example.neko"
+waitForPort = 5000
+
 [deployment]
 run = ["sh", "-c", "npm install antlr4 sqlite3 && chmod +x bin/neko-script && node src/index.js exécuter examples/hello.neko"]
+
+[[ports]]
+localPort = 5000
+externalPort = 80

@@ -1,0 +1,53 @@
+// Example de création de site web avec NekoScript
+// Ce fichier montre comment créer un site web en utilisant le module neksite
+
+nekImporter("neksite");
+
+// Création d'un site web simple
+neksite.créer {
+  // Première page - Accueil
+  page = "Accueil" {
+    titre: "Site Demo NekoScript";
+    contenu: "<h2>Bienvenue sur mon site NekoScript!</h2><p>Ce site a été généré avec le langage de programmation NekoScript.</p>";
+    
+    style {
+      couleurFond: "#f5f5f5";
+      couleurTexte: "#333333";
+      police: "Arial, sans-serif";
+      tailleTitre: "32px";
+    }
+    
+    lien: "À propos";
+    lien: "Contact";
+  }
+  
+  // Deuxième page - À propos
+  page = "À propos" {
+    titre: "À propos de NekoScript";
+    contenu: "<h2>Qu'est-ce que NekoScript?</h2><p>NekoScript est un langage de programmation en français qui permet de créer facilement des applications et des sites web.</p><p>Il est conçu pour être simple et intuitif.</p>";
+    
+    style {
+      couleurFond: "#e8f4f8";
+      couleurTexte: "#444444";
+    }
+    
+    lien: "Accueil";
+    lien: "Contact";
+  }
+  
+  // Troisième page - Contact
+  page = "Contact" {
+    titre: "Contactez-nous";
+    contenu: "<h2>Contactez l'équipe NekoScript</h2><p>Email: contact@nekoscript.fr</p><p>Téléphone: 01 23 45 67 89</p>";
+    
+    style {
+      couleurFond: "#f0f0e8";
+      couleurTexte: "#555555";
+    }
+    
+    lien: "Accueil";
+    lien: "À propos";
+  }
+}
+
+neko = ("Site web créé avec succès! Le navigateur devrait s'ouvrir automatiquement.");
