@@ -1,0 +1,150 @@
+// Exemple amélioré de création de site web en NekoScript
+// Utilisant des variables utilisateur et des meilleures pratiques
+
+nekImporter("neksite");
+
+// Définir des variables pour personnaliser le site
+siteConfig = {
+  titre: "Super Site NekoScript",
+  sousTitre: "Créé avec la puissance des variables NekoScript",
+  auteur: "Développeur NekoScript",
+  couleur: "#8e44ad",
+  description: "Un site web dynamique créé avec NekoScript",
+  annee: 2025
+};
+
+// Création du site web avec la configuration utilisateur
+neksite.créer {
+  // Configuration globale
+  titre: siteConfig.titre;
+  auteur: siteConfig.auteur;
+  description: siteConfig.description;
+  
+  // En-tête et pied de page
+  avecNav: true;
+  avecFooter: true;
+  footerTexte: "© " + siteConfig.annee + " - " + siteConfig.auteur;
+  
+  // Style global
+  theme: "coloré";
+  stylePersonnalisé: "
+    .header {
+      text-align: center;
+      margin: 30px 0;
+      padding: 20px;
+      border-bottom: 3px solid " + siteConfig.couleur + ";
+    }
+    .content {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .feature {
+      background-color: " + siteConfig.couleur + "20;
+      border-left: 5px solid " + siteConfig.couleur + ";
+      padding: 15px;
+      margin: 20px 0;
+    }
+    .cta-button {
+      display: inline-block;
+      background-color: " + siteConfig.couleur + ";
+      color: white;
+      padding: 10px 20px;
+      border-radius: 5px;
+      text-decoration: none;
+      font-weight: bold;
+      margin-top: 20px;
+    }
+  ";
+
+  // Page d'accueil
+  page = "Accueil" {
+    titre: siteConfig.titre;
+    contenu: "
+      <div class='header'>
+        <h1>" + siteConfig.titre + "</h1>
+        <p>" + siteConfig.sousTitre + "</p>
+      </div>
+      <div class='content'>
+        <h2>Bienvenue sur notre site!</h2>
+        <p>Ce site démontre l'utilisation de variables en NekoScript pour personnaliser dynamiquement votre contenu.</p>
+        
+        <div class='feature'>
+          <h3>Fonctionnalités principales</h3>
+          <ul>
+            <li>Utilisation de variables pour personnaliser le contenu</li>
+            <li>Thème personnalisé basé sur une couleur principale</li>
+            <li>Navigation entre les pages générée automatiquement</li>
+            <li>Style cohérent sur toutes les pages</li>
+          </ul>
+        </div>
+        
+        <p>Pour en savoir plus sur nos services, consultez notre page À Propos.</p>
+        <a href='a-propos.html' class='cta-button'>En savoir plus</a>
+      </div>
+    ";
+    
+    lien: "À propos";
+    lien: "Contact";
+  }
+  
+  // Page À propos
+  page = "À propos" {
+    titre: "À propos de " + siteConfig.titre;
+    contenu: "
+      <div class='header'>
+        <h1>À propos de nous</h1>
+      </div>
+      <div class='content'>
+        <h2>Notre histoire</h2>
+        <p>" + siteConfig.titre + " a été créé pour montrer la puissance de NekoScript dans la création de sites web dynamiques.</p>
+        
+        <div class='feature'>
+          <h3>Notre mission</h3>
+          <p>Simplifier la création de sites web en français avec une syntaxe intuitive et puissante.</p>
+        </div>
+        
+        <h2>Notre équipe</h2>
+        <p>Notre équipe est composée de développeurs passionnés dirigés par " + siteConfig.auteur + ".</p>
+        
+        <a href='contact.html' class='cta-button'>Contactez-nous</a>
+      </div>
+    ";
+    
+    lien: "Accueil";
+    lien: "Contact";
+  }
+  
+  // Page Contact
+  page = "Contact" {
+    titre: "Contactez " + siteConfig.auteur;
+    contenu: "
+      <div class='header'>
+        <h1>Contact</h1>
+      </div>
+      <div class='content'>
+        <h2>Restons en contact</h2>
+        <p>Vous pouvez contacter " + siteConfig.auteur + " par email ou téléphone.</p>
+        
+        <div class='feature'>
+          <h3>Informations de contact</h3>
+          <p>Email: contact@" + remplacerEspaces(siteConfig.titre.toLowerCase()) + ".fr</p>
+          <p>Téléphone: 01 23 45 67 89</p>
+          <p>Adresse: 123 Avenue de la Programmation, 75000 Paris</p>
+        </div>
+        
+        <a href='accueil.html' class='cta-button'>Retour à l'accueil</a>
+      </div>
+    ";
+    
+    lien: "Accueil";
+    lien: "À propos";
+  }
+}
+
+// Fonction utilitaire pour remplacer les espaces par des tirets
+function remplacerEspaces(texte) {
+  return texte.replace(/\s+/g, "-");
+}
+
+neko = ("Site web créé avec succès! Le navigateur devrait s'ouvrir automatiquement.");

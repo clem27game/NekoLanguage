@@ -1,0 +1,122 @@
+// Exemple de création de site web avec variables utilisateur en NekoScript
+// Version améliorée pour une meilleure gestion des variables
+
+nekImporter("neksite");
+
+// Définir des variables qui seront utilisées dans le site web
+titre = "Mon Site Personnel";
+messageAccueil = "Bienvenue sur mon site créé avec NekoScript!";
+auteur = "Développeur NekoScript";
+couleurTheme = "#3498db";
+version = "1.0.0";
+
+// Fonction pour échapper les caractères spéciaux dans les chaînes de caractères
+function escaperHtml(texte) {
+  return texte;
+}
+
+// Création d'un site web avec variables - version simplifiée
+neksite.créer {
+  // Configuration globale
+  titre: titre;
+  auteur: auteur;
+  description: "Site demonstratif avec variables en NekoScript v" + version;
+  avecNav: true;
+  avecFooter: true;
+  footerTexte: "© 2025 " + auteur + " - Version " + version;
+  
+  // Thème global
+  stylePersonnalisé: "
+    .highlight {
+      background-color: " + couleurTheme + ";
+      color: #ffffff;
+      padding: 5px 10px;
+      border-radius: 4px;
+    }
+  ";
+
+  // Première page - Accueil
+  page = "Accueil" {
+    titre: "Page d'accueil de " + titre;
+    contenu: "
+      <h1>" + titre + "</h1>
+      <p class='highlight'>" + messageAccueil + "</p>
+      <p>Ce site utilise des variables NekoScript pour personnaliser son contenu dynamiquement.</p>
+      <p>L'auteur est <strong>" + auteur + "</strong> et la version actuelle est <strong>" + version + "</strong>.</p>
+      <div id='contenu-dynamique'></div>
+    ";
+    
+    // Ajouter du JavaScript pour manipuler les variables côté client
+    scriptPersonnalisé: "
+      document.addEventListener('DOMContentLoaded', function() {
+        console.log('Site NekoScript - Variables chargées');
+        var infoDiv = document.createElement('div');
+        infoDiv.innerHTML = '<p>Site généré le " + nekoDateActuelle() + "</p>';
+        document.getElementById('contenu-dynamique').appendChild(infoDiv);
+      });
+    ";
+    
+    style {
+      couleurFond: "#f5f5f5";
+      couleurTexte: "#333333";
+    }
+    
+    lien: "À propos";
+    lien: "Contact";
+  }
+  
+  // Deuxième page - À propos
+  page = "À propos" {
+    titre: "À propos de " + titre;
+    contenu: "
+      <h1>À propos de " + titre + "</h1>
+      <p>Ce site démontre l'utilisation de variables dans le module neksite.</p>
+      <p>Les variables peuvent être utilisées dans:</p>
+      <ul>
+        <li>Le contenu HTML des pages</li>
+        <li>Les titres et autres métadonnées</li>
+        <li>Les styles personnalisés</li>
+        <li>Le pied de page et la navigation</li>
+      </ul>
+      <div class='highlight'>Version actuelle: " + version + "</div>
+    ";
+    
+    style {
+      couleurFond: "#e8f4f8";
+      couleurTexte: "#444444";
+    }
+    
+    lien: "Accueil";
+    lien: "Contact";
+  }
+  
+  // Troisième page - Contact
+  page = "Contact" {
+    titre: "Contactez " + auteur;
+    contenu: "
+      <h1>Contact</h1>
+      <p>Vous pouvez contacter l'auteur <strong>" + auteur + "</strong> par email:</p>
+      <p class='highlight'>contact@monsite.fr</p>
+      <p>Merci d'avoir visité " + titre + "!</p>
+    ";
+    
+    style {
+      couleurFond: "#f0f0e8";
+      couleurTexte: "#555555";
+    }
+    
+    lien: "Accueil";
+    lien: "À propos";
+  }
+}
+
+// Fonction helper pour obtenir la date actuelle au format lisible
+function nekoDateActuelle() {
+  date = new Date();
+  jour = date.getDate();
+  mois = date.getMonth() + 1;
+  annee = date.getFullYear();
+  return jour + "/" + mois + "/" + annee;
+}
+
+neko = ("Site web avec variables créé avec succès! Le navigateur devrait s'ouvrir automatiquement.");

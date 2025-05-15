@@ -48,6 +48,14 @@ args = "tester-site-variables"
 task = "workflow.run"
 args = "tester-site-templates"
 
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "tester-site-fixed"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "tester-site-demo"
+
 [[workflows.workflow]]
 name = "NekoScript"
 author = "agent"
@@ -121,6 +129,22 @@ author = "agent"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "node src/index.js exécuter examples/site-variables-templateliterals.neko"
+
+[[workflows.workflow]]
+name = "tester-site-fixed"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "node src/index.js exécuter examples/site-variables-fixed.neko"
+
+[[workflows.workflow]]
+name = "tester-site-demo"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "node src/index.js exécuter examples/site-demo.neko"
 
 [deployment]
 run = ["sh", "-c", "npm install antlr4 sqlite3 && chmod +x bin/neko-script && node src/index.js exécuter examples/hello.neko"]

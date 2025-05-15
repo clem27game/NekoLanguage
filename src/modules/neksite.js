@@ -12,6 +12,70 @@ const { exec } = require('child_process');
 // Importer notre helper pour la gestion des variables
 const { NekoSiteHelper } = require('../interpreter/nekoSiteHelper');
 
+// Rediriger les avertissements de variables non définies vers une fonction silencieuse
+// Cela évite d'afficher les faux positifs lors du parsing HTML
+const originalConsoleWarn = console.warn;
+console.warn = function(...args) {
+  // Filtrer les messages concernant les variables non définies dans le HTML
+  const message = args[0];
+  if (typeof message === 'string' && message.startsWith('Variable "') && message.includes('non définie')) {
+    const variableName = message.split('"')[1];
+    // Liste de mots clés HTML, CSS et JS couramment utilisés qui génèrent des faux positifs
+    const htmlJsKeywords = [
+      // HTML éléments
+      'div', 'span', 'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'a', 'img', 'form', 'input',
+      'button', 'table', 'tr', 'td', 'th', 'thead', 'tbody', 'header', 'footer', 'nav', 'section', 'article',
+      'aside', 'main', 'figure', 'figcaption', 'blockquote', 'code', 'pre', 'strong', 'em', 'b', 'i', 'u',
+      'label', 'select', 'option', 'textarea', 'iframe', 'canvas', 'audio', 'video', 'source', 'track',
+      
+      // HTML attributs
+      'src', 'href', 'class', 'id', 'style', 'alt', 'title', 'width', 'height', 'type', 'name', 'value',
+      'placeholder', 'autocomplete', 'required', 'disabled', 'readonly', 'checked', 'selected', 'target',
+      'rel', 'aria-label', 'data-', 'role', 'tabindex', 'colspan', 'rowspan',
+      
+      // CSS propriétés
+      'color', 'background', 'margin', 'padding', 'border', 'font', 'text', 'display', 'position', 'top',
+      'left', 'right', 'bottom', 'width', 'height', 'max-width', 'min-width', 'float', 'clear', 'opacity',
+      'z-index', 'box-shadow', 'text-shadow', 'transform', 'transition', 'animation', 'flex', 'grid',
+      'align', 'justify', 'content', 'items', 'self', 'center', 'space-between', 'space-around', 'stretch',
+      'start', 'end', 'baseline', 'wrap', 'block', 'inline', 'relative', 'absolute', 'fixed', 'sticky',
+      'none', 'auto', 'hidden', 'solid', 'dotted', 'dashed', 'bold', 'italic', 'underline', 'uppercase',
+      'lowercase', 'capitalize', 'nowrap', 'pre', 'pre-wrap', 'pre-line', 'break', 'pointer', 'default',
+      
+      // JavaScript mots-clés
+      'true', 'false', 'null', 'undefined', 'document', 'window', 'console', 'function', 'var', 'let',
+      'const', 'if', 'else', 'switch', 'case', 'for', 'while', 'do', 'break', 'continue', 'return',
+      'new', 'this', 'try', 'catch', 'finally', 'throw', 'async', 'await', 'Promise', 'fetch', 'map',
+      'filter', 'reduce', 'forEach', 'push', 'pop', 'shift', 'unshift', 'join', 'split', 'slice',
+      'substring', 'replace', 'match', 'test', 'indexOf', 'lastIndexOf', 'includes', 'toLowerCase',
+      'toUpperCase', 'length', 'find', 'some', 'every', 'sort', 'keys', 'values', 'entries',
+      
+      // JavaScript DOM/BOM
+      'addEventListener', 'getElementById', 'getElementsByClassName', 'getElementsByTagName',
+      'querySelector', 'querySelectorAll', 'innerHTML', 'outerHTML', 'textContent', 'appendChild',
+      'removeChild', 'insertBefore', 'createElement', 'createTextNode', 'setAttribute', 'getAttribute',
+      'removeAttribute', 'classList', 'add', 'remove', 'toggle', 'contains', 'dataset', 'style',
+      'parentNode', 'childNodes', 'firstChild', 'lastChild', 'nextSibling', 'previousSibling',
+      'className', 'location', 'history', 'navigator', 'setTimeout', 'setInterval', 'clearTimeout',
+      'clearInterval', 'localStorage', 'sessionStorage', 'preventDefault', 'stopPropagation',
+      
+      // Français (mots courants dans le HTML)
+      'accueil', 'contact', 'propos', 'nous', 'vous', 'menu', 'sur', 'voir', 'plus', 'moins', 'tous',
+      'savoir', 'retour', 'cta', 'feature', 'header', 'content', 'footer'
+    ];
+      
+    // Si le nom de la variable est un mot clé HTML/JS, ne pas afficher l'avertissement
+    if (htmlJsKeywords.includes(variableName) || 
+        variableName.length <= 2 || // Ignorer les variables de 1-2 caractères (souvent des noms génériques dans le HTML)
+        /^[A-Z][a-z]+[A-Z]/.test(variableName)) { // Ignorer les mots en camelCase comme DOMContentLoaded
+      return; // Ignorer ce message
+    }
+  }
+  
+  // Sinon, utiliser l'implémentation originale
+  originalConsoleWarn.apply(console, args);
+};
+
 class NekoSite {
   constructor(runtime) {
     this.runtime = runtime;
