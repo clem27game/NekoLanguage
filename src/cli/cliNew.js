@@ -236,27 +236,35 @@ class NekoCLI {
           const updatedVersion = response.version || version;
           
           if (response.updated) {
-            console.log(`\x1b[32m✓ Le package \x1b[1m${name}\x1b[0m\x1b[32m a été mis à jour avec succès en version \x1b[1m${updatedVersion}\x1b[0m\x1b[32m dans le référentiel global !\x1b[0m`);
+            console.log(`\x1b[32m✓ Le package \x1b[1m${name}\x1b[0m\x1b[32m a été mis à jour avec succès en version \x1b[1m${updatedVersion}\x1b[0m\x1b[32m !\x1b[0m`);
           } else {
-            console.log(`\x1b[32m✓ Le package \x1b[1m${name}\x1b[0m\x1b[32m a été publié avec succès en version \x1b[1m${updatedVersion}\x1b[0m\x1b[32m dans le référentiel global !\x1b[0m`);
+            console.log(`\x1b[32m✓ Le package \x1b[1m${name}\x1b[0m\x1b[32m a été publié avec succès en version \x1b[1m${updatedVersion}\x1b[0m\x1b[32m !\x1b[0m`);
           }
           
-          console.log(`Il est maintenant disponible pour tous les utilisateurs de NekoScript.`);
-          console.log(`Pour l'utiliser: \x1b[36mnekImporter("${name}");\x1b[0m`);
+          // Informer sur le mode de stockage utilisé
+          if (response.storageMode === 'local') {
+            console.log(`\x1b[36mLe package a été enregistré dans votre stockage local (~/.nekoscript/packages).\x1b[0m`);
+            console.log(`Vous pouvez l'utiliser sur cette machine avec: \x1b[36mnekImporter("${name}");\x1b[0m`);
+          } else {
+            console.log(`Il est maintenant disponible pour tous les utilisateurs de NekoScript.`);
+            console.log(`Pour l'utiliser: \x1b[36mnekImporter("${name}");\x1b[0m`);
+          }
           
           // Si la version a été automatiquement incrémentée, informer l'utilisateur
           if (updatedVersion !== version) {
             console.log(`\x1b[33mNote: La version a été automatiquement incrémentée à ${updatedVersion} car la version ${version} existait déjà.\x1b[0m`);
           }
         } else {
-          console.log(`\x1b[33mLe package a été sauvegardé localement mais n'a pas pu être publié dans le référentiel global.\x1b[0m`);
+          console.log(`\x1b[33mLe package a été sauvegardé localement mais n'a pas pu être enregistré dans le référentiel global.\x1b[0m`);
           console.log(`Vous pouvez quand même l'utiliser avec: \x1b[36mnekImporter("${name}");\x1b[0m`);
         }
       } catch (globalError) {
         console.log(`\x1b[33mLe package a été sauvegardé localement mais n'a pas pu être publié dans le référentiel global: ${globalError.message}\x1b[0m`);
-        console.log(`Vous pouvez quand même l'utiliser avec: \x1b[36mnekImporter("${name}");\x1b[0m`);
+        console.log(`\x1b[36mVous pouvez quand même l'utiliser sur cette machine avec: \x1b[1mnekImporter("${name}");\x1b[0m`);
         
-        console.log(`\x1b[33mConseil: Pour mettre à jour un package existant, assurez-vous d'utiliser une version différente avec --version ou le serveur incrémentera automatiquement le numéro de version.\x1b[0m`);
+        // Conseils supplémentaires
+        console.log(`\x1b[33mNote: Le système utilise automatiquement le stockage local quand la base de données globale n'est pas disponible.\x1b[0m`);
+        console.log(`\x1b[33mConseil: Pour mettre à jour un package existant, assurez-vous d'utiliser une version différente avec --version.\x1b[0m`);
       }
     } catch (error) {
       console.error(`\x1b[31m✗ Erreur lors de la publication: ${error.message}\x1b[0m`);

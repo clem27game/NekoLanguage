@@ -202,7 +202,12 @@ class PackageDatabase {
           versions: this.localPackageVersions
         }, null, 2));
         
-        return { packageName, version: targetVersion, updated: isUpdate };
+        return { 
+          packageName, 
+          version: targetVersion, 
+          updated: isUpdate,
+          storageMode: 'local'  // Indiquer que le package a été sauvegardé en local
+        };
       } catch (error) {
         console.error(`Erreur lors de la publication locale du package ${packageName}:`, error);
         throw error;
@@ -452,6 +457,45 @@ class PackageDatabase {
   async listPackages(limit = 100, offset = 0, searchTerm = '') {
     await this.initialize();
     
+    // Si nous utilisons le stockage local
+    if (this.useLocalStorage) {
+      try {
+        // Obtenir les packages à partir du stockage local
+        const packages = Object.values(this.localPackages);
+        
+        // Filtrer par recherche si nécessaire
+        let filteredPackages = packages;
+        if (searchTerm) {
+          const searchTermLower = searchTerm.toLowerCase();
+          filteredPackages = packages.filter(pkg => 
+            pkg.name.toLowerCase().includes(searchTermLower) || 
+            (pkg.description && pkg.description.toLowerCase().includes(searchTermLower))
+          );
+        }
+        
+        // Trier par téléchargements puis par nom
+        filteredPackages.sort((a, b) => {
+          const downloadsA = a.downloads || 0;
+          const downloadsB = b.downloads || 0;
+          
+          if (downloadsB !== downloadsA) {
+            return downloadsB - downloadsA;
+          }
+          
+          return a.name.localeCompare(b.name);
+        });
+        
+        // Appliquer limite et décalage
+        const paginatedPackages = filteredPackages.slice(offset, offset + limit);
+        
+        return paginatedPackages;
+      } catch (error) {
+        console.error('Erreur lors de la récupération locale de la liste des packages:', error);
+        return [];
+      }
+    }
+    
+    // Si nous utilisons PostgreSQL
     try {
       let query, params;
       
@@ -478,8 +522,12 @@ class PackageDatabase {
       
       return result.rows;
     } catch (error) {
-      console.error('Erreur lors de la récupération de la liste des packages:', error);
-      throw error;
+      console.error('Erreur lors de la récupération PostgreSQL de la liste des packages:', error);
+      
+      // En cas d'erreur PostgreSQL, passer au stockage local
+      console.log('Tentative de récupération en stockage local après échec PostgreSQL...');
+      this.useLocalStorage = true;
+      return this.listPackages(limit, offset, searchTerm);
     }
   }
 }
