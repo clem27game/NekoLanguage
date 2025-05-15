@@ -119,6 +119,42 @@ Pour plus d'informations, consultez les documents suivants dans le répertoire `
 - [Guide de contribution](docs/CONTRIBUTING.md) - Comment contribuer au projet
 - [Guide de publication](docs/PUBLISHING.md) - Instructions pour publier NekoScript sur GitHub et npm
 
+## Résolution des problèmes courants
+
+### Erreur "Cannot find module ANTLR4"
+
+Si vous rencontrez cette erreur lors de l'exécution de NekoScript, cela signifie que la dépendance ANTLR4 n'est pas correctement installée. Il existe deux méthodes pour résoudre ce problème :
+
+#### Solution 1 : Script de correction automatique
+
+Utilisez notre script de correction automatique des dépendances :
+
+```bash
+# Dans le répertoire où vous avez installé NekoScript
+chmod +x fix-dependencies.sh
+./fix-dependencies.sh
+```
+
+#### Solution 2 : Installation manuelle des dépendances
+
+```bash
+# Dans le répertoire où vous avez installé NekoScript
+npm install antlr4 sqlite3 --save
+
+# Si vous avez installé NekoScript globalement
+npm install -g antlr4 sqlite3
+```
+
+Assurez-vous également que votre version de Node.js est au moins 12.0.0 ou supérieure.
+
+Si ces solutions ne fonctionnent pas, essayez de réinstaller complètement NekoScript :
+
+```bash
+# Désinstaller puis réinstaller
+npm uninstall -g neko-script
+npm install -g .
+```
+
 ## Commandes en terminal
 
 ```bash
