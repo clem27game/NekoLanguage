@@ -9,20 +9,80 @@ const path = require('path');
 
 class PackageDatabase {
   constructor() {
-    this.pool = new Pool({
-      connectionString: process.env.DATABASE_URL,
-    });
+    // Utiliser un système de fallback pour gérer les environnements sans PostgreSQL
+    this.useLocalStorage = !process.env.DATABASE_URL;
+    
+    // Stockage local des packages en mémoire ou dans des fichiers si PostgreSQL n'est pas disponible
+    this.localPackages = {};
+    this.localPackageVersions = {};
+    
+    // Initialiser la connexion PostgreSQL seulement si disponible
+    if (!this.useLocalStorage) {
+      try {
+        this.pool = new Pool({
+          connectionString: process.env.DATABASE_URL,
+          // Augmenter le délai d'attente pour la connexion
+          connectionTimeoutMillis: 5000,
+        });
+      } catch (error) {
+        console.warn("Impossible de se connecter à PostgreSQL. Utilisation du stockage local.");
+        this.useLocalStorage = true;
+      }
+    }
     
     this.initialized = false;
+    
+    // Répertoire de stockage local des packages
+    this.packageDir = path.join(process.env.HOME || process.env.USERPROFILE || ".", ".nekoscript", "packages");
+    
+    // Créer le répertoire si nécessaire
+    if (this.useLocalStorage && !fs.existsSync(this.packageDir)) {
+      try {
+        fs.mkdirSync(this.packageDir, { recursive: true });
+      } catch (error) {
+        console.error("Erreur lors de la création du répertoire de packages:", error);
+      }
+    }
   }
 
   /**
-   * Initialise la base de données
+   * Initialise la base de données ou le stockage local
    */
   async initialize() {
     if (this.initialized) return;
     
+    // Si nous utilisons le stockage local, charger les packages existants
+    if (this.useLocalStorage) {
+      try {
+        // Charger les métadonnées des packages si le fichier existe
+        const indexPath = path.join(this.packageDir, 'index.json');
+        
+        if (fs.existsSync(indexPath)) {
+          const indexData = JSON.parse(fs.readFileSync(indexPath, 'utf8'));
+          this.localPackages = indexData.packages || {};
+          this.localPackageVersions = indexData.versions || {};
+        }
+        
+        console.log('Stockage local des packages initialisé avec succès.');
+        this.initialized = true;
+        return;
+      } catch (error) {
+        console.warn('Erreur lors de l\'initialisation du stockage local, création d\'un nouveau:', error);
+        this.localPackages = {};
+        this.localPackageVersions = {};
+        this.initialized = true;
+        return;
+      }
+    }
+    
+    // Si nous utilisons PostgreSQL
     try {
+      // Vérifier la connexion avant de créer les tables
+      const testConnection = await this.pool.query('SELECT NOW()').catch(err => {
+        console.error('Erreur de connexion PostgreSQL:', err);
+        throw new Error(`Impossible de se connecter à PostgreSQL: ${err.message}`);
+      });
+      
       // Création des tables nécessaires
       await this.pool.query(`
         CREATE TABLE IF NOT EXISTS packages (
@@ -56,22 +116,100 @@ class PackageDatabase {
         );
       `);
       
-      console.log('Base de données des packages initialisée avec succès.');
+      console.log('Base de données PostgreSQL des packages initialisée avec succès.');
       this.initialized = true;
     } catch (error) {
-      console.error('Erreur lors de l\'initialisation de la base de données:', error);
-      throw error;
+      console.error('Erreur lors de l\'initialisation de la base de données PostgreSQL:', error);
+      
+      // Passer en mode stockage local en cas d'erreur PostgreSQL
+      console.log('Basculement vers le stockage local des packages...');
+      this.useLocalStorage = true;
+      this.localPackages = {};
+      this.localPackageVersions = {};
+      this.initialized = true;
     }
   }
 
   /**
-   * Publie un package dans la base de données
+   * Publie un package dans la base de données ou en stockage local
    */
   async publishPackage(packageName, packageContent, language, options = {}) {
     await this.initialize();
     
-    const { version = '1.0.0', author = 'Unknown', description = '' } = options;
+    const { version = '1.0.0', author = 'Utilisateur NekoScript', description = '' } = options;
     
+    // Validation du format de version
+    if (version !== '0.0.0') {
+      const versionParts = version.split('.');
+      if (versionParts.length !== 3 || versionParts.some(part => isNaN(Number(part)))) {
+        throw new Error(`Format de version invalide: ${version}. Utilisez le format majeur.mineur.correctif (ex: 1.0.0)`);
+      }
+    }
+    
+    // Si nous utilisons le stockage local
+    if (this.useLocalStorage) {
+      try {
+        // Date actuelle en ISO format
+        const currentDate = new Date().toISOString();
+        const packageFilePath = path.join(this.packageDir, `${packageName}.pkg`);
+        
+        // Vérifier si le package existe déjà
+        let targetVersion = version;
+        let isUpdate = false;
+        
+        if (this.localPackages[packageName]) {
+          isUpdate = true;
+          // Vérifier si la version existe déjà
+          const existingVersions = this.localPackageVersions[packageName] || [];
+          if (existingVersions.includes(version) && version !== '0.0.0') {
+            // La version existe déjà, incrémenter automatiquement
+            const versionParts = version.split('.');
+            let [major, minor, patch] = versionParts.map(Number);
+            patch++;
+            targetVersion = `${major}.${minor}.${patch}`;
+            console.log(`La version ${version} existe déjà. Incrémentation automatique à ${targetVersion}`);
+          }
+        }
+        
+        // Sauvegarder le contenu du package
+        fs.writeFileSync(packageFilePath, packageContent);
+        
+        // Mettre à jour les métadonnées
+        this.localPackages[packageName] = {
+          name: packageName,
+          version: targetVersion,
+          author,
+          description,
+          language,
+          downloads: this.localPackages[packageName]?.downloads || 0,
+          created_at: this.localPackages[packageName]?.created_at || currentDate,
+          updated_at: currentDate
+        };
+        
+        // Mettre à jour les versions
+        if (!this.localPackageVersions[packageName]) {
+          this.localPackageVersions[packageName] = [];
+        }
+        
+        if (!this.localPackageVersions[packageName].includes(targetVersion)) {
+          this.localPackageVersions[packageName].push(targetVersion);
+        }
+        
+        // Sauvegarder l'index des packages
+        const indexPath = path.join(this.packageDir, 'index.json');
+        fs.writeFileSync(indexPath, JSON.stringify({
+          packages: this.localPackages,
+          versions: this.localPackageVersions
+        }, null, 2));
+        
+        return { packageName, version: targetVersion, updated: isUpdate };
+      } catch (error) {
+        console.error(`Erreur lors de la publication locale du package ${packageName}:`, error);
+        throw error;
+      }
+    }
+    
+    // Si nous utilisons PostgreSQL
     try {
       // Vérifie si le package existe déjà
       const existingPackageResult = await this.pool.query(
@@ -89,44 +227,33 @@ class PackageDatabase {
           [packageId, version]
         );
         
+        let targetVersion = version;
+        
         if (versionCheckResult.rows.length > 0 && version !== '0.0.0') {
           // La version existe déjà, incrémenter automatiquement le numéro de version
-          // Extraire les composants de la version (majeur.mineur.correctif)
           const versionParts = version.split('.');
-          if (versionParts.length !== 3) {
-            throw new Error(`Format de version invalide: ${version}. Utilisez le format majeur.mineur.correctif (ex: 1.0.0)`);
-          }
           
           // Incrémenter le dernier nombre (correctif)
           let [major, minor, patch] = versionParts.map(Number);
           patch++;
-          const newVersion = `${major}.${minor}.${patch}`;
-          console.log(`La version ${version} existe déjà. Incrémentation automatique à ${newVersion}`);
-          version = newVersion;
+          targetVersion = `${major}.${minor}.${patch}`;
+          console.log(`La version ${version} existe déjà. Incrémentation automatique à ${targetVersion}`);
         }
         
         // Insertion d'une nouvelle version
         await this.pool.query(
           'INSERT INTO package_versions (package_id, version, content) VALUES ($1, $2, $3) ON CONFLICT (package_id, version) DO UPDATE SET content = $3',
-          [packageId, version, packageContent]
+          [packageId, targetVersion, packageContent]
         );
         
         // Mise à jour des informations générales du package
         await this.pool.query(
           'UPDATE packages SET version = $1, description = $2, content = $3, language = $4, updated_at = CURRENT_TIMESTAMP WHERE id = $5',
-          [version, description || '', packageContent, language, packageId]
+          [targetVersion, description || '', packageContent, language, packageId]
         );
         
-        return { packageName, version, updated: true };
+        return { packageName, version: targetVersion, updated: true };
       } else {
-        // Validation du format de version
-        if (version !== '0.0.0') {
-          const versionParts = version.split('.');
-          if (versionParts.length !== 3 || versionParts.some(part => isNaN(Number(part)))) {
-            throw new Error(`Format de version invalide: ${version}. Utilisez le format majeur.mineur.correctif (ex: 1.0.0)`);
-          }
-        }
-        
         // Insertion d'un nouveau package
         const newPackageResult = await this.pool.query(
           'INSERT INTO packages (name, version, author, description, content, language) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id',
@@ -144,8 +271,13 @@ class PackageDatabase {
         return { packageName, version, updated: false };
       }
     } catch (error) {
-      console.error(`Erreur lors de la publication du package ${packageName}:`, error);
-      throw error;
+      // Si erreur PostgreSQL, essayer le stockage local
+      console.error(`Erreur lors de la publication PostgreSQL du package ${packageName}:`, error);
+      
+      // Passer en mode stockage local et réessayer
+      console.log('Tentative de publication en stockage local après échec PostgreSQL...');
+      this.useLocalStorage = true;
+      return this.publishPackage(packageName, packageContent, language, options);
     }
   }
 
@@ -155,6 +287,32 @@ class PackageDatabase {
   async getPackageInfo(packageName) {
     await this.initialize();
     
+    // Si nous utilisons le stockage local
+    if (this.useLocalStorage) {
+      try {
+        // Vérifier si le package existe
+        if (!this.localPackages[packageName]) {
+          return null;
+        }
+        
+        // Récupérer les informations du package
+        const packageInfo = this.localPackages[packageName];
+        
+        // Ajouter l'historique des versions
+        const versions = this.localPackageVersions[packageName] || [];
+        packageInfo.versions = versions.map(version => ({
+          version,
+          created_at: packageInfo.created_at
+        }));
+        
+        return packageInfo;
+      } catch (error) {
+        console.error(`Erreur lors de la récupération locale des informations du package ${packageName}:`, error);
+        return null;
+      }
+    }
+    
+    // Si nous utilisons PostgreSQL
     try {
       const result = await this.pool.query(
         'SELECT id, name, version, author, description, language, downloads, created_at, updated_at FROM packages WHERE name = $1',
@@ -177,8 +335,12 @@ class PackageDatabase {
       
       return result.rows[0];
     } catch (error) {
-      console.error(`Erreur lors de la récupération des informations du package ${packageName}:`, error);
-      throw error;
+      console.error(`Erreur lors de la récupération PostgreSQL des informations du package ${packageName}:`, error);
+      
+      // En cas d'erreur PostgreSQL, passer au stockage local
+      console.log('Tentative de récupération en stockage local après échec PostgreSQL...');
+      this.useLocalStorage = true;
+      return this.getPackageInfo(packageName);
     }
   }
 
@@ -188,6 +350,57 @@ class PackageDatabase {
   async downloadPackage(packageName, version = null) {
     await this.initialize();
     
+    // Si nous utilisons le stockage local
+    if (this.useLocalStorage) {
+      try {
+        // Vérifier si le package existe
+        if (!this.localPackages[packageName]) {
+          console.error(`Package local ${packageName} non trouvé.`);
+          return null;
+        }
+        
+        // Utiliser la version spécifiée ou la dernière version disponible
+        const availableVersions = this.localPackageVersions[packageName] || [];
+        if (availableVersions.length === 0) {
+          console.error(`Aucune version disponible pour le package local ${packageName}.`);
+          return null;
+        }
+        
+        const targetVersion = version || this.localPackages[packageName].version;
+        
+        // Vérifier si la version demandée existe
+        if (version && !availableVersions.includes(version)) {
+          console.error(`Version ${version} du package local ${packageName} non trouvée.`);
+          return null;
+        }
+        
+        // Lire le contenu du package
+        const packageFilePath = path.join(this.packageDir, `${packageName}.pkg`);
+        if (!fs.existsSync(packageFilePath)) {
+          console.error(`Fichier du package local ${packageName} introuvable.`);
+          return null;
+        }
+        
+        const content = fs.readFileSync(packageFilePath, 'utf8');
+        
+        // Incrémenter le compteur de téléchargements
+        this.localPackages[packageName].downloads = (this.localPackages[packageName].downloads || 0) + 1;
+        
+        // Mettre à jour le fichier d'index
+        const indexPath = path.join(this.packageDir, 'index.json');
+        fs.writeFileSync(indexPath, JSON.stringify({
+          packages: this.localPackages,
+          versions: this.localPackageVersions
+        }, null, 2));
+        
+        return content;
+      } catch (error) {
+        console.error(`Erreur lors du téléchargement du package local ${packageName}:`, error);
+        return null;
+      }
+    }
+    
+    // Si nous utilisons PostgreSQL
     try {
       let query, params;
       
@@ -209,7 +422,11 @@ class PackageDatabase {
       const result = await this.pool.query(query, params);
       
       if (result.rows.length === 0) {
-        throw new Error(`Package ${packageName} non trouvé`);
+        console.error(`Package PostgreSQL ${packageName} non trouvé.`);
+        
+        // Si le package n'est pas trouvé, essayer le stockage local
+        this.useLocalStorage = true;
+        return this.downloadPackage(packageName, version);
       }
       
       // Incrémenter le compteur de téléchargements
@@ -220,8 +437,12 @@ class PackageDatabase {
       
       return result.rows[0].content;
     } catch (error) {
-      console.error(`Erreur lors du téléchargement du package ${packageName}:`, error);
-      throw error;
+      console.error(`Erreur lors du téléchargement du package PostgreSQL ${packageName}:`, error);
+      
+      // En cas d'erreur PostgreSQL, passer au stockage local
+      console.log('Tentative de téléchargement en stockage local après échec PostgreSQL...');
+      this.useLocalStorage = true;
+      return this.downloadPackage(packageName, version);
     }
   }
 
