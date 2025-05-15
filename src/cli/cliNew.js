@@ -196,11 +196,18 @@ class NekoCLI {
         }
       }
 
+      // Vérifier si le fichier existe
+      if (!fs.existsSync(packageName)) {
+        console.error(`\x1b[31m✗ Erreur: Le fichier ${packageName} n'existe pas.\x1b[0m`);
+        return;
+      }
+      
       // Read file
       const packageContent = fs.readFileSync(packageName, 'utf8');
 
       // Extract name from filename (without extension)
-      const name = path.basename(packageName, '.neko');
+      // Si le packageName fourni est déjà un nom et non un fichier, on l'utilise directement
+      const name = packageName.endsWith('.neko') ? path.basename(packageName, '.neko') : packageName;
       
       console.log(`\x1b[36mPublication du package \x1b[1m${name}\x1b[0m\x1b[36m version \x1b[1m${version}\x1b[0m\x1b[36m...\x1b[0m`);
 
@@ -225,16 +232,31 @@ class NekoCLI {
           description
         });
         
-        if (response && response.success) {
-          console.log(`\x1b[32m✓ Le package \x1b[1m${name}\x1b[0m\x1b[32m a été publié avec succès dans le référentiel global !\x1b[0m`);
+        if (response && (response.success || response.packageName)) {
+          const updatedVersion = response.version || version;
+          
+          if (response.updated) {
+            console.log(`\x1b[32m✓ Le package \x1b[1m${name}\x1b[0m\x1b[32m a été mis à jour avec succès en version \x1b[1m${updatedVersion}\x1b[0m\x1b[32m dans le référentiel global !\x1b[0m`);
+          } else {
+            console.log(`\x1b[32m✓ Le package \x1b[1m${name}\x1b[0m\x1b[32m a été publié avec succès en version \x1b[1m${updatedVersion}\x1b[0m\x1b[32m dans le référentiel global !\x1b[0m`);
+          }
+          
           console.log(`Il est maintenant disponible pour tous les utilisateurs de NekoScript.`);
+          console.log(`Pour l'utiliser: \x1b[36mnekImporter("${name}");\x1b[0m`);
+          
+          // Si la version a été automatiquement incrémentée, informer l'utilisateur
+          if (updatedVersion !== version) {
+            console.log(`\x1b[33mNote: La version a été automatiquement incrémentée à ${updatedVersion} car la version ${version} existait déjà.\x1b[0m`);
+          }
         } else {
           console.log(`\x1b[33mLe package a été sauvegardé localement mais n'a pas pu être publié dans le référentiel global.\x1b[0m`);
-          console.log(`Vous pouvez quand même l'utiliser avec: nekImporter("${name}");`);
+          console.log(`Vous pouvez quand même l'utiliser avec: \x1b[36mnekImporter("${name}");\x1b[0m`);
         }
       } catch (globalError) {
         console.log(`\x1b[33mLe package a été sauvegardé localement mais n'a pas pu être publié dans le référentiel global: ${globalError.message}\x1b[0m`);
-        console.log(`Vous pouvez quand même l'utiliser avec: nekImporter("${name}");`);
+        console.log(`Vous pouvez quand même l'utiliser avec: \x1b[36mnekImporter("${name}");\x1b[0m`);
+        
+        console.log(`\x1b[33mConseil: Pour mettre à jour un package existant, assurez-vous d'utiliser une version différente avec --version ou le serveur incrémentera automatiquement le numéro de version.\x1b[0m`);
       }
     } catch (error) {
       console.error(`\x1b[31m✗ Erreur lors de la publication: ${error.message}\x1b[0m`);

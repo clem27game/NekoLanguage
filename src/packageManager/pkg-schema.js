@@ -83,24 +83,54 @@ class PackageDatabase {
         // Mise à jour du package existant
         const packageId = existingPackageResult.rows[0].id;
         
+        // Vérifier si la version existe déjà pour ce package
+        const versionCheckResult = await this.pool.query(
+          'SELECT id FROM package_versions WHERE package_id = $1 AND version = $2',
+          [packageId, version]
+        );
+        
+        if (versionCheckResult.rows.length > 0 && version !== '0.0.0') {
+          // La version existe déjà, incrémenter automatiquement le numéro de version
+          // Extraire les composants de la version (majeur.mineur.correctif)
+          const versionParts = version.split('.');
+          if (versionParts.length !== 3) {
+            throw new Error(`Format de version invalide: ${version}. Utilisez le format majeur.mineur.correctif (ex: 1.0.0)`);
+          }
+          
+          // Incrémenter le dernier nombre (correctif)
+          let [major, minor, patch] = versionParts.map(Number);
+          patch++;
+          const newVersion = `${major}.${minor}.${patch}`;
+          console.log(`La version ${version} existe déjà. Incrémentation automatique à ${newVersion}`);
+          version = newVersion;
+        }
+        
         // Insertion d'une nouvelle version
         await this.pool.query(
           'INSERT INTO package_versions (package_id, version, content) VALUES ($1, $2, $3) ON CONFLICT (package_id, version) DO UPDATE SET content = $3',
           [packageId, version, packageContent]
         );
         
-        // Mise à jour des informations générales
+        // Mise à jour des informations générales du package
         await this.pool.query(
           'UPDATE packages SET version = $1, description = $2, content = $3, language = $4, updated_at = CURRENT_TIMESTAMP WHERE id = $5',
-          [version, description, packageContent, language, packageId]
+          [version, description || '', packageContent, language, packageId]
         );
         
         return { packageName, version, updated: true };
       } else {
+        // Validation du format de version
+        if (version !== '0.0.0') {
+          const versionParts = version.split('.');
+          if (versionParts.length !== 3 || versionParts.some(part => isNaN(Number(part)))) {
+            throw new Error(`Format de version invalide: ${version}. Utilisez le format majeur.mineur.correctif (ex: 1.0.0)`);
+          }
+        }
+        
         // Insertion d'un nouveau package
         const newPackageResult = await this.pool.query(
           'INSERT INTO packages (name, version, author, description, content, language) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id',
-          [packageName, version, author, description, packageContent, language]
+          [packageName, version, author || 'Utilisateur NekoScript', description || '', packageContent, language]
         );
         
         const packageId = newPackageResult.rows[0].id;
@@ -134,6 +164,16 @@ class PackageDatabase {
       if (result.rows.length === 0) {
         return null;
       }
+      
+      // Récupérer également l'historique des versions
+      const packageId = result.rows[0].id;
+      const versionsResult = await this.pool.query(
+        'SELECT version, created_at FROM package_versions WHERE package_id = $1 ORDER BY created_at DESC',
+        [packageId]
+      );
+      
+      // Ajouter l'historique des versions aux informations du package
+      result.rows[0].versions = versionsResult.rows;
       
       return result.rows[0];
     } catch (error) {
