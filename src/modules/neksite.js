@@ -9,6 +9,8 @@ const path = require('path');
 const express = require('express');
 // Utiliser une solution plus simple pour ouvrir le navigateur
 const { exec } = require('child_process');
+// Importer notre helper pour la gestion des variables
+const { NekoSiteHelper } = require('../interpreter/nekoSiteHelper');
 
 class NekoSite {
   constructor(runtime) {
@@ -18,6 +20,9 @@ class NekoSite {
     this.outputDir = './site-output';
     this.port = 5000; // Port unique pour le serveur localhost
     this.server = null;
+    
+    // Initialiser notre helper de gestion des variables
+    this.siteHelper = new NekoSiteHelper(runtime);
     
     // Thèmes prédéfinis que l'utilisateur peut modifier
     this.themes = {
@@ -573,32 +578,8 @@ ${footerHTML}
         // Ne traiter que les réponses HTML
         if (typeof body === 'string' && body.includes('<!DOCTYPE html>')) {
           try {
-            // Remplacer uniquement les variables utilisateur dans le HTML
-            let processedBody = body;
-            
-            // Ne chercher que les variables qui correspondent exactement au format ${varName}
-            // Éviter les faux positifs dans le code HTML (<div>, etc.)
-            const variablePattern = /\${([a-zA-Z0-9_]+)}/g;
-            let match;
-            
-            // Faire le remplacement manuellement
-            while ((match = variablePattern.exec(body)) !== null) {
-              const fullMatch = match[0]; // ${variableName}
-              const variableName = match[1]; // variableName
-              
-              try {
-                // Chercher la valeur de la variable dans le runtime
-                const value = that.runtime.getVariable(variableName);
-                
-                if (value !== undefined) {
-                  // Remplacer toutes les occurrences dans le texte
-                  const regex = new RegExp(fullMatch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
-                  processedBody = processedBody.replace(regex, String(value));
-                }
-              } catch (err) {
-                // Ne pas afficher d'avertissement - cela peut être du HTML légitime
-              }
-            }
+            // Utiliser notre helper pour remplacer les variables
+            const processedBody = that.siteHelper.replaceVariables(body);
             
             // Appeler la méthode send originale avec le contenu traité
             return originalSend.call(this, processedBody);
@@ -653,6 +634,65 @@ ${footerHTML}
       }
     });
     
+    // Endpoint pour afficher les variables disponibles dans une page HTML
+    app.get('/debug-variables', (req, res) => {
+      try {
+        // Récupérer toutes les variables disponibles
+        const variables = {};
+        if (this.runtime && this.runtime.scope) {
+          Object.keys(this.runtime.scope).forEach(key => {
+            try {
+              const value = this.runtime.getVariable(key);
+              variables[key] = value;
+            } catch (e) {
+              // Ignorer les variables qu'on ne peut pas récupérer
+            }
+          });
+        }
+        
+        // Générer une page HTML pour afficher les variables
+        const html = `
+        <!DOCTYPE html>
+        <html lang="fr">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Variables NekoScript</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 20px; }
+            h1 { color: #333; }
+            table { border-collapse: collapse; width: 100%; }
+            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+            th { background-color: #f2f2f2; }
+            tr:nth-child(even) { background-color: #f9f9f9; }
+          </style>
+        </head>
+        <body>
+          <h1>Variables NekoScript disponibles</h1>
+          <table>
+            <tr>
+              <th>Nom</th>
+              <th>Valeur</th>
+              <th>Type</th>
+            </tr>
+            ${Object.entries(variables).map(([key, value]) => `
+              <tr>
+                <td>${key}</td>
+                <td>${typeof value === 'object' ? JSON.stringify(value) : String(value)}</td>
+                <td>${typeof value}</td>
+              </tr>
+            `).join('')}
+          </table>
+        </body>
+        </html>
+        `;
+        
+        res.send(html);
+      } catch (error) {
+        res.status(500).send(`<h1>Erreur</h1><p>${error.message}</p>`);
+      }
+    });
+    
     // Démarrer le serveur
     this.server = app.listen(this.port, '0.0.0.0', () => {
       console.log(`Serveur NekoScript démarré sur http://localhost:${this.port}`);
@@ -701,68 +741,8 @@ ${footerHTML}
    * @returns {Object} - Configuration avec variables remplacées
    */
   processVariables(config) {
-    // Si config n'est pas un objet, le retourner tel quel
-    if (!config || typeof config !== 'object') {
-      return config;
-    }
-    
-    const result = {};
-    
-    // Parcourir récursivement l'objet config pour remplacer les variables
-    for (const key in config) {
-      if (Object.prototype.hasOwnProperty.call(config, key)) {
-        const value = config[key];
-        
-        if (typeof value === 'string') {
-          // Ne traiter que les variables qui correspondent exactement au format ${varName}
-          const variablePattern = /\${([a-zA-Z0-9_]+)}/g;
-          let processedValue = value;
-          let match;
-          
-          // Remplacer toutes les variables par leur valeur
-          while ((match = variablePattern.exec(value)) !== null) {
-            const fullMatch = match[0]; // ${variableName}
-            const variableName = match[1]; // variableName
-            
-            try {
-              // Chercher la valeur de la variable dans le runtime
-              const variableValue = this.runtime.getVariable(variableName);
-              
-              // Remplacer la référence par la valeur
-              if (variableValue !== undefined) {
-                const valueStr = String(variableValue);
-                // Créer un regex avec le full match échappé pour éviter les problèmes avec les caractères spéciaux
-                const regex = new RegExp(fullMatch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
-                processedValue = processedValue.replace(regex, valueStr);
-              }
-            } catch (error) {
-              // Ne pas afficher d'avertissements pour les variables non définies dans le contenu HTML
-              if (key !== 'contenu' && key !== 'content' && key !== 'stylePersonnalisé' && key !== 'footerTexte') {
-                console.warn(`Variable "${variableName}" non définie dans le site web, laissée telle quelle.`);
-              }
-            }
-          }
-          
-          result[key] = processedValue;
-        } else if (Array.isArray(value)) {
-          // Traiter les tableaux récursivement
-          result[key] = value.map(item => {
-            if (typeof item === 'object') {
-              return this.processVariables(item);
-            }
-            return item;
-          });
-        } else if (typeof value === 'object' && value !== null) {
-          // Traiter les objets récursivement
-          result[key] = this.processVariables(value);
-        } else {
-          // Garder les autres types de valeurs tels quels
-          result[key] = value;
-        }
-      }
-    }
-    
-    return result;
+    // Utiliser notre helper spécialisé pour le traitement des variables
+    return this.siteHelper.processConfig(config);
   }
 
   /**
