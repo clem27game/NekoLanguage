@@ -331,6 +331,15 @@ class NekoSite {
     // Assurer que style est bien un objet pour éviter les erreurs
     const pageStyle = typeof style === 'object' && style !== null ? style : {};
     const mergedStyle = { ...this.siteConfig.theme, ...pageStyle };
+    
+    // Conserver le contenu original avec variables (le remplacement se fera côté client)
+    // Stocker les variables pour les afficher plus tard
+    let processedContent = content;
+    
+    // Vérifier que le contenu est bien une chaîne de caractères
+    if (typeof processedContent !== 'string') {
+      processedContent = String(processedContent || '');
+    }
 
     // Construire le CSS
     let cssStyles = '';
@@ -545,8 +554,64 @@ ${footerHTML}
 
     const app = express();
     
+    // Middleware pour parser le body des requêtes
+    app.use(express.json());
+    app.use(express.urlencoded({ extended: true }));
+    
     // Servir les fichiers statiques depuis le répertoire de sortie
     app.use(express.static(this.outputDir));
+    
+    // Intercepter toutes les requêtes pour les pages pour remplacer les variables dynamiques
+    const that = this; // Référence à l'instance NekoSite
+    
+    app.use((req, res, next) => {
+      // Stocker la méthode send originale pour l'intercepter
+      const originalSend = res.send;
+      
+      // Remplacer la méthode send pour traiter le contenu avant envoi
+      res.send = function(body) {
+        // Ne traiter que les réponses HTML
+        if (typeof body === 'string' && body.includes('<!DOCTYPE html>')) {
+          try {
+            // Remplacer les variables dynamiques dans le HTML
+            let processedBody = body;
+            const variablePattern = /\${([^}]+)}/g;
+            let match;
+            
+            // Faire le remplacement manuellement
+            while ((match = variablePattern.exec(body)) !== null) {
+              const fullMatch = match[0]; // ${variableName}
+              const variableName = match[1]; // variableName
+              
+              try {
+                // Chercher la valeur de la variable dans le runtime
+                const value = that.runtime.getVariable(variableName);
+                
+                if (value !== undefined) {
+                  // Remplacer toutes les occurrences dans le texte
+                  processedBody = processedBody.replace(
+                    new RegExp(fullMatch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), 
+                    String(value)
+                  );
+                }
+              } catch (err) {
+                console.warn(`Variable "${variableName}" non définie dans le site web.`);
+              }
+            }
+            
+            // Appeler la méthode send originale avec le contenu traité
+            return originalSend.call(this, processedBody);
+          } catch (error) {
+            console.error('Erreur lors du traitement des variables dans la page:', error);
+          }
+        }
+        
+        // Si ce n'est pas du HTML ou en cas d'erreur, envoyer le contenu original
+        return originalSend.call(this, body);
+      };
+      
+      next();
+    });
     
     // Redirection de la racine vers index.html
     app.get('/', (req, res) => {
@@ -562,6 +627,28 @@ ${footerHTML}
         res.redirect(`/${this.pages[0].filename}`);
       } else {
         res.send('Site NekoScript - Aucune page disponible');
+      }
+    });
+    
+    // API pour accéder aux variables du runtime (utilisation interne seulement)
+    app.get('/api/variables', (req, res) => {
+      try {
+        // Récupérer toutes les variables disponibles
+        const variables = {};
+        // Note: dépend de l'implémentation du runtime, à adapter si nécessaire
+        if (this.runtime && this.runtime.scope) {
+          Object.keys(this.runtime.scope).forEach(key => {
+            try {
+              const value = this.runtime.getVariable(key);
+              variables[key] = value;
+            } catch (e) {
+              // Ignorer les variables qu'on ne peut pas récupérer
+            }
+          });
+        }
+        res.json(variables);
+      } catch (error) {
+        res.status(500).json({ error: 'Erreur lors de la récupération des variables' });
       }
     });
     
