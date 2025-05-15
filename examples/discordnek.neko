@@ -1,0 +1,330 @@
+// DiscordNek - Module NekoScript pour créer des bots Discord
+// Version: 1.0.0
+// Auteur: NekoScript Team
+
+// Importation des modules internes
+nekImporter("interne");
+
+// Configuration du bot
+var nekDiscordToken = "";
+var nekDiscordClient = null;
+var nekDiscordCommandes = {};
+var nekDiscordStatus = "en ligne";
+var nekDiscordActivite = "";
+var nekDiscordTypeActivite = "joue"; // "joue", "regarde", "écoute", "diffuse"
+
+// Initialisation du bot Discord via l'API Discord.js
+fonction nekDiscordInitialiser(token) {
+  nekAfficher("Initialisation du bot Discord...");
+  nekDiscordToken = token;
+  
+  // Utilisation de l'API JavaScript pour initialiser discord.js
+  nekExecuterJS(`
+    const { Client, GatewayIntentBits, Partials, ActivityType, EmbedBuilder } = require('discord.js');
+    
+    // Créer un nouveau client Discord avec les intents nécessaires
+    global.discordClient = new Client({
+      intents: [
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.MessageContent,
+        GatewayIntentBits.GuildMembers,
+        GatewayIntentBits.DirectMessages
+      ],
+      partials: [Partials.Channel]
+    });
+    
+    // Stockages globaux pour les éléments Discord
+    global.discordCommands = {};
+    global.discordEvents = {};
+    global.discordEmbeds = {};
+    
+    // Fonction pour créer un embed Discord
+    global.createEmbed = (title, description, color = '#3498db', fields = [], image = null) => {
+      const embed = new EmbedBuilder()
+        .setTitle(title)
+        .setDescription(description)
+        .setColor(color);
+        
+      if (fields.length > 0) {
+        fields.forEach(field => {
+          embed.addFields({ name: field.name, value: field.value, inline: field.inline || false });
+        });
+      }
+      
+      if (image) {
+        embed.setImage(image);
+      }
+      
+      return embed;
+    };
+  `);
+  
+  nekDiscordClient = "initialisé";
+  return "Bot Discord initialisé avec succès!";
+}
+
+// Se connecter au Discord
+fonction nekDiscordConnecter() {
+  if (nekDiscordToken == "") {
+    return "Erreur: Token Discord non défini. Utilisez nekDiscordInitialiser(token) d'abord.";
+  }
+  
+  nekExecuterJS(`
+    // Connexion du client Discord
+    global.discordClient.login('${nekDiscordToken}')
+      .then(() => {
+        console.log('Bot Discord connecté!');
+      })
+      .catch(err => {
+        console.error('Erreur de connexion Discord:', err);
+      });
+  `);
+  
+  return "Tentative de connexion au bot Discord en cours...";
+}
+
+// Définir un statut pour le bot
+fonction nekDiscordDefinirStatus(status) {
+  nekDiscordStatus = status;
+  
+  nekExecuterJS(`
+    let statusValue;
+    switch ('${status}') {
+      case 'en ligne':
+        statusValue = 'online';
+        break;
+      case 'inactif':
+        statusValue = 'idle';
+        break;
+      case 'ne pas déranger':
+        statusValue = 'dnd';
+        break;
+      case 'invisible':
+        statusValue = 'invisible';
+        break;
+      default:
+        statusValue = 'online';
+    }
+    
+    if (global.discordClient && global.discordClient.user) {
+      global.discordClient.user.setStatus(statusValue);
+    }
+  `);
+  
+  return `Status du bot défini: ${status}`;
+}
+
+// Définir une activité pour le bot
+fonction nekDiscordDefinirActivite(type, texte) {
+  nekDiscordTypeActivite = type;
+  nekDiscordActivite = texte;
+  
+  nekExecuterJS(`
+    let activityType;
+    switch ('${type}') {
+      case 'joue':
+        activityType = ActivityType.Playing;
+        break;
+      case 'regarde':
+        activityType = ActivityType.Watching;
+        break;
+      case 'écoute':
+        activityType = ActivityType.Listening;
+        break;
+      case 'diffuse':
+        activityType = ActivityType.Streaming;
+        break;
+      default:
+        activityType = ActivityType.Playing;
+    }
+    
+    if (global.discordClient && global.discordClient.user) {
+      global.discordClient.user.setActivity('${texte}', { type: activityType });
+    }
+  `);
+  
+  return `Activité du bot définie: ${type} à ${texte}`;
+}
+
+// Ajouter une commande slash
+fonction nekDiscordAjouterCommande(nom, description, callback) {
+  nekDiscordCommandes[nom] = callback;
+  
+  nekExecuterJS(`
+    global.discordCommands['${nom}'] = {
+      name: '${nom}',
+      description: '${description}',
+      callback: ${callback.toString()}
+    };
+  `);
+  
+  return `Commande '${nom}' ajoutée`;
+}
+
+// Créer un message embed
+fonction nekDiscordCreerEmbed(titre, description, couleur, champs, image) {
+  return nekExecuterJS(`
+    const embed = global.createEmbed(
+      '${titre}',
+      '${description}',
+      '${couleur || "#3498db"}',
+      ${JSON.stringify(champs || [])},
+      '${image || ""}'
+    );
+    return embed;
+  `);
+}
+
+// Envoyer un message dans un canal
+fonction nekDiscordEnvoyerMessage(canalId, message) {
+  nekExecuterJS(`
+    const channel = global.discordClient.channels.cache.get('${canalId}');
+    if (channel) {
+      channel.send('${message}')
+        .then(() => console.log('Message envoyé avec succès'))
+        .catch(err => console.error('Erreur d\'envoi de message:', err));
+    } else {
+      console.error('Canal non trouvé');
+    }
+  `);
+  
+  return "Message envoyé au canal";
+}
+
+// Envoyer un embed dans un canal
+fonction nekDiscordEnvoyerEmbed(canalId, embed) {
+  nekExecuterJS(`
+    const channel = global.discordClient.channels.cache.get('${canalId}');
+    if (channel) {
+      channel.send({ embeds: [${embed}] })
+        .then(() => console.log('Embed envoyé avec succès'))
+        .catch(err => console.error('Erreur d\'envoi d\'embed:', err));
+    } else {
+      console.error('Canal non trouvé');
+    }
+  `);
+  
+  return "Embed envoyé au canal";
+}
+
+// Écouter un événement Discord
+fonction nekDiscordEcouterEvenement(evenement, callback) {
+  nekExecuterJS(`
+    global.discordClient.on('${evenement}', ${callback.toString()});
+    global.discordEvents['${evenement}'] = ${callback.toString()};
+  `);
+  
+  return `Écoute de l'événement '${evenement}' configurée`;
+}
+
+// Enregistrer les commandes slash
+fonction nekDiscordEnregistrerCommandes() {
+  if (Object.keys(nekDiscordCommandes).length === 0) {
+    return "Aucune commande à enregistrer";
+  }
+  
+  nekExecuterJS(`
+    const { REST, Routes } = require('discord.js');
+    
+    const commands = Object.keys(global.discordCommands).map(name => {
+      const command = global.discordCommands[name];
+      return {
+        name: command.name,
+        description: command.description
+      };
+    });
+    
+    const rest = new REST({ version: '10' }).setToken('${nekDiscordToken}');
+    
+    (async () => {
+      try {
+        console.log('Début de l\'enregistrement des commandes slash...');
+        
+        // Si le client est connecté, on enregistre les commandes globalement
+        if (global.discordClient && global.discordClient.user) {
+          await rest.put(
+            Routes.applicationCommands(global.discordClient.user.id),
+            { body: commands }
+          );
+          
+          console.log('Commandes slash enregistrées avec succès!');
+        } else {
+          console.error('Le client Discord n\'est pas connecté, impossible d\'enregistrer les commandes');
+        }
+      } catch (error) {
+        console.error('Erreur lors de l\'enregistrement des commandes slash:', error);
+      }
+    })();
+  `);
+  
+  return "Enregistrement des commandes slash en cours...";
+}
+
+// Configurer le handler des commandes slash
+fonction nekDiscordConfigurerHandlerCommandes() {
+  nekExecuterJS(`
+    global.discordClient.on('interactionCreate', async interaction => {
+      if (!interaction.isCommand()) return;
+      
+      const command = global.discordCommands[interaction.commandName];
+      if (!command) return;
+      
+      try {
+        // Exécution de la fonction callback de la commande
+        await command.callback(interaction);
+      } catch (error) {
+        console.error('Erreur lors de l\'exécution de la commande:', error);
+        if (interaction.replied || interaction.deferred) {
+          await interaction.followUp({ content: 'Une erreur est survenue lors de l\'exécution de la commande.', ephemeral: true });
+        } else {
+          await interaction.reply({ content: 'Une erreur est survenue lors de l\'exécution de la commande.', ephemeral: true });
+        }
+      }
+    });
+  `);
+  
+  return "Handler des commandes slash configuré";
+}
+
+// Fonction d'aide pour la création de bots Discord
+fonction nekDiscordAide() {
+  nekAfficher("===== Guide du module DiscordNek =====");
+  nekAfficher("1. nekDiscordInitialiser(token) - Initialise le bot avec votre token Discord");
+  nekAfficher("2. nekDiscordConnecter() - Connecte le bot à Discord");
+  nekAfficher("3. nekDiscordDefinirStatus(status) - Définit le statut du bot (en ligne, inactif, ne pas déranger, invisible)");
+  nekAfficher("4. nekDiscordDefinirActivite(type, texte) - Définit l'activité du bot (joue, regarde, écoute, diffuse)");
+  nekAfficher("5. nekDiscordAjouterCommande(nom, description, callback) - Ajoute une commande slash");
+  nekAfficher("6. nekDiscordEnregistrerCommandes() - Enregistre les commandes slash auprès de Discord");
+  nekAfficher("7. nekDiscordConfigurerHandlerCommandes() - Configure le gestionnaire de commandes slash");
+  nekAfficher("8. nekDiscordCreerEmbed(titre, description, couleur, champs, image) - Crée un message embed");
+  nekAfficher("9. nekDiscordEnvoyerMessage(canalId, message) - Envoie un message dans un canal");
+  nekAfficher("10. nekDiscordEnvoyerEmbed(canalId, embed) - Envoie un embed dans un canal");
+  nekAfficher("11. nekDiscordEcouterEvenement(evenement, callback) - Écoute un événement Discord");
+  nekAfficher("=== Exemple d'utilisation ===");
+  nekAfficher("nekDiscordInitialiser('votre-token-discord');");
+  nekAfficher("nekDiscordConnecter();");
+  nekAfficher("nekDiscordDefinirStatus('en ligne');");
+  nekAfficher("nekDiscordDefinirActivite('joue', 'avec NekoScript');");
+  nekAfficher("nekDiscordAjouterCommande('bonjour', 'Dit bonjour', fonction(interaction) { interaction.reply('Bonjour!'); });");
+  nekAfficher("nekDiscordEnregistrerCommandes();");
+  nekAfficher("nekDiscordConfigurerHandlerCommandes();");
+  
+  return "Guide d'aide affiché";
+}
+
+// Exporter les fonctions
+nekExporter({
+  nekDiscordInitialiser: nekDiscordInitialiser,
+  nekDiscordConnecter: nekDiscordConnecter,
+  nekDiscordDefinirStatus: nekDiscordDefinirStatus,
+  nekDiscordDefinirActivite: nekDiscordDefinirActivite,
+  nekDiscordAjouterCommande: nekDiscordAjouterCommande,
+  nekDiscordEnregistrerCommandes: nekDiscordEnregistrerCommandes,
+  nekDiscordConfigurerHandlerCommandes: nekDiscordConfigurerHandlerCommandes,
+  nekDiscordCreerEmbed: nekDiscordCreerEmbed,
+  nekDiscordEnvoyerMessage: nekDiscordEnvoyerMessage,
+  nekDiscordEnvoyerEmbed: nekDiscordEnvoyerEmbed,
+  nekDiscordEcouterEvenement: nekDiscordEcouterEvenement,
+  nekDiscordAide: nekDiscordAide
+});

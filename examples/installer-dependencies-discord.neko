@@ -1,0 +1,30 @@
+// Script d'installation des dépendances pour DiscordNek
+// Ce script installe discord.js dans votre environnement NekoScript
+
+nekAfficher("Installation des dépendances pour DiscordNek...");
+
+// Utiliser l'API JavaScript pour installer discord.js via npm
+nekExecuterJS(`
+  const { execSync } = require('child_process');
+  
+  console.log('Début de l\'installation de discord.js...');
+  
+  try {
+    // Exécuter la commande npm install
+    execSync('npm install discord.js@14', { stdio: 'inherit' });
+    console.log('discord.js installé avec succès!');
+  } catch (error) {
+    console.error('Erreur lors de l\'installation de discord.js:', error);
+  }
+`);
+
+nekAfficher("Pour utiliser DiscordNek, vous devez:");
+nekAfficher("1. Créer une application sur https://discord.com/developers/applications");
+nekAfficher("2. Créer un bot pour votre application");
+nekAfficher("3. Copier le token du bot et l'utiliser dans votre script NekoScript");
+nekAfficher("4. Inviter le bot sur votre serveur avec les permissions nécessaires");
+nekAfficher("");
+nekAfficher("Exemple d'URL d'invitation (remplacez APP_ID par l'ID de votre application):");
+nekAfficher("https://discord.com/api/oauth2/authorize?client_id=APP_ID&permissions=8&scope=bot%20applications.commands");
+nekAfficher("");
+nekAfficher("Installation terminée! Utilisez le package 'discordnek' pour créer votre bot.");

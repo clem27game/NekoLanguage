@@ -1,0 +1,103 @@
+// Exemple d'utilisation du module DiscordNek
+// Pour créer un bot Discord simple avec NekoScript
+
+// Importer le module DiscordNek (si déjà publié globalement)
+nekImporter("discordnek");
+
+// Si le module n'est pas encore publié, vous pouvez utiliser le chemin local
+// nekImporterFichier("./discordnek.neko");
+
+// Afficher le guide d'aide
+nekDiscordAide();
+
+// Configuration de base du bot
+var monToken = "VOTRE_TOKEN_DISCORD"; // Remplacez par votre token Discord
+
+// Initialiser et connecter le bot
+nekDiscordInitialiser(monToken);
+nekDiscordConnecter();
+
+// Définir le statut et l'activité du bot
+nekDiscordDefinirStatus("en ligne");
+nekDiscordDefinirActivite("joue", "avec NekoScript");
+
+// Ajouter des commandes slash
+nekDiscordAjouterCommande("bonjour", "Envoie un message de bienvenue", fonction(interaction) {
+  nekExecuterJS(`
+    interaction.reply("Bonjour! Je suis un bot Discord créé avec NekoScript!");
+  `);
+});
+
+nekDiscordAjouterCommande("aide", "Affiche l'aide du bot", fonction(interaction) {
+  nekExecuterJS(`
+    interaction.reply({
+      content: "Voici les commandes disponibles:",
+      embeds: [
+        global.createEmbed(
+          "Aide du Bot NekoScript",
+          "Liste des commandes disponibles",
+          "#00ff00",
+          [
+            { name: "/bonjour", value: "Envoie un message de bienvenue", inline: true },
+            { name: "/aide", value: "Affiche cette aide", inline: true },
+            { name: "/info", value: "Affiche des informations sur le bot", inline: true }
+          ]
+        )
+      ]
+    });
+  `);
+});
+
+nekDiscordAjouterCommande("info", "Affiche des informations sur le bot", fonction(interaction) {
+  nekExecuterJS(`
+    interaction.reply({
+      content: "Informations sur le bot:",
+      embeds: [
+        global.createEmbed(
+          "Bot NekoScript",
+          "Ce bot a été créé avec le module DiscordNek pour NekoScript",
+          "#3498db",
+          [
+            { name: "Langage", value: "NekoScript", inline: true },
+            { name: "Créateur", value: "Utilisateur NekoScript", inline: true },
+            { name: "Version", value: "1.0.0", inline: true }
+          ],
+          "https://i.imgur.com/DGq4rUj.png" // Image de NekoScript (à remplacer par la vôtre)
+        )
+      ]
+    });
+  `);
+});
+
+// Enregistrer les commandes auprès de Discord
+nekDiscordEnregistrerCommandes();
+
+// Configurer le handler pour traiter les commandes
+nekDiscordConfigurerHandlerCommandes();
+
+// Écouter l'événement de connexion réussie
+nekDiscordEcouterEvenement("ready", fonction() {
+  nekExecuterJS(`
+    console.log('Bot connecté en tant que: ' + global.discordClient.user.tag);
+  `);
+});
+
+// Écouter les messages
+nekDiscordEcouterEvenement("messageCreate", fonction(message) {
+  nekExecuterJS(`
+    if (message.author.bot) return; // Ignorer les messages des bots
+    
+    // Répondre à un message spécifique
+    if (message.content.toLowerCase() === 'salut') {
+      message.reply('Salut! Comment ça va?');
+    }
+    
+    // Réagir aux mentions du bot
+    if (message.mentions.has(global.discordClient.user)) {
+      message.channel.send('Tu m\'as mentionné? Je suis un bot créé avec NekoScript!');
+    }
+  `);
+});
+
+nekAfficher("Bot Discord initialisé et en attente d'événements...");
+nekAfficher("Utilisez Ctrl+C pour arrêter le bot");
