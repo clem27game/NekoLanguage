@@ -7,7 +7,7 @@ statement
     : variableDeclaration
     | expressionStatement
     | functionDeclaration
-    | functionCall ';'
+    | functionCall ';'?
     | importStatement
     | webSiteDeclaration
     | ifStatement
@@ -16,12 +16,12 @@ statement
     ;
 
 variableDeclaration
-    : ID '=' expression ';'
-    | 'compteneko' '=' numExpression ';'
+    : ID '=' expression ';'?
+    | 'compteneko' '=' numExpression ';'?
     ;
 
 expressionStatement
-    : expression ';'
+    : expression ';'?
     ;
 
 expression
@@ -33,11 +33,7 @@ expression
     | STRING # StringExpression
     | ID # IdentifierExpression
     | '(' expression ')' # ParenExpression
-    | stringConcatenation # StringConcatExpression
-    ;
-
-stringConcatenation
-    : expression '+' expression
+    | expression '+' expression # StringConcatenation
     ;
 
 numExpression
@@ -50,7 +46,7 @@ numExpression
     ;
 
 functionDeclaration
-    : 'nek' ID '(' paramList? ')' block
+    : ('nek' ID | ID) '(' paramList? ')' block
     ;
 
 paramList
@@ -58,7 +54,7 @@ paramList
     ;
 
 functionCall
-    : ('nek' ID | ID) '(' argList? ')'
+    : ('nek')? ID '(' argList? ')'
     ;
 
 argList
@@ -66,11 +62,11 @@ argList
     ;
 
 importStatement
-    : 'nekImporter' '(' STRING ')' ';'
+    : 'nekImporter' '(' STRING ')' ';'?
     ;
 
 webSiteDeclaration
-    : 'neksite.créer' webSiteBlock
+    : 'neksite.créer' (',' 'script')? webSiteBlock
     ;
 
 webSiteBlock
@@ -78,19 +74,20 @@ webSiteBlock
     ;
 
 webSiteProperty
-    : 'page' '=' STRING '{' (webSiteProperty | styleBlock)* '}'
-    | 'titre' ':' STRING ';'
-    | 'contenu' ':' STRING ';'
-    | 'image' ':' STRING ';'
-    | 'lien' ':' STRING ',' STRING ';'
+    : 'contenu' ':' '(' STRING ')' ','?
+    | 'titre' ':' STRING ','?
+    | 'lang' ':' STRING ','?
+    | 'couleur-de-fond' ':' STRING ','?
+    | 'style' styleBlock
+    | 'script' block
     ;
 
 styleBlock
-    : 'style' '{' styleProperty* '}'
+    : '{' styleProperty* '}'
     ;
 
 styleProperty
-    : ID ':' (STRING | NUMBER) ';'
+    : ID ':' (STRING | NUMBER) ','?
     ;
 
 ifStatement
@@ -98,10 +95,10 @@ ifStatement
     ;
 
 condition
-    : expression 'estEgal' expression
+    : expression
+    | expression ('est' | 'estEgal') expression
     | expression 'plusGrandQue' expression
     | expression 'plusPetitQue' expression
-    | expression
     ;
 
 loopStatement
@@ -116,5 +113,6 @@ block
 ID: [a-zA-Z_][a-zA-Z0-9_]* ;
 NUMBER: [0-9]+ ('.' [0-9]+)? ;
 STRING: '"' (~["\r\n] | '\\"')* '"' ;
+PLUS: '+' ;
 COMMENT: '//' .*? ('\n' | EOF) -> skip ;
 WS: [ \t\r\n]+ -> skip ;

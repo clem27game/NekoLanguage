@@ -1,0 +1,10 @@
+// Mon premier programme NekoScript!
+// Créé le "2023-03-15"
+
+compteneko = 50;
+
+// Erreur à corriger - variable non définie
+neko = ("Le résultat est:");
+compteneko = nom;
+
+neko = ("Bonjour,");
