@@ -1,5 +1,5 @@
 {
-  "name": "neko-script",
+  "name": "neko-script-lang",
   "version": "1.0.0",
   "description": "Langage de programmation en français avec syntaxe intuitive pour développer sites web, jeux et bots Discord",
   "main": "src/index.js",
@@ -14,7 +14,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/votre-username/nekoscript.git"
+    "url": "git+https://github.com/clem27game/NekoLanguage.git"
   },
   "keywords": [
     "language",
@@ -31,15 +31,15 @@
     "discord",
     "bot"
   ],
-  "author": "Votre Nom",
+  "author": "Mikazia027",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/votre-username/nekoscript/issues"
+    "url": "https://github.com/clem27game/NekoLanguage/issues"
   },
-  "homepage": "https://github.com/votre-username/nekoscript#readme",
+  "homepage": "https://github.com/clem27game/NekoLanguage/home",
   "dependencies": {
-    "antlr4": "^4.13.0",
-    "sqlite3": "^5.1.6"
+    "antlr4": "^4.13.2",
+    "sqlite3": "^5.1.7"
   },
   "engines": {
     "node": ">=12.0.0"
