@@ -573,9 +573,12 @@ ${footerHTML}
         // Ne traiter que les réponses HTML
         if (typeof body === 'string' && body.includes('<!DOCTYPE html>')) {
           try {
-            // Remplacer les variables dynamiques dans le HTML
+            // Remplacer uniquement les variables utilisateur dans le HTML
             let processedBody = body;
-            const variablePattern = /\${([^}]+)}/g;
+            
+            // Ne chercher que les variables qui correspondent exactement au format ${varName}
+            // Éviter les faux positifs dans le code HTML (<div>, etc.)
+            const variablePattern = /\${([a-zA-Z0-9_]+)}/g;
             let match;
             
             // Faire le remplacement manuellement
@@ -589,13 +592,11 @@ ${footerHTML}
                 
                 if (value !== undefined) {
                   // Remplacer toutes les occurrences dans le texte
-                  processedBody = processedBody.replace(
-                    new RegExp(fullMatch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), 
-                    String(value)
-                  );
+                  const regex = new RegExp(fullMatch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
+                  processedBody = processedBody.replace(regex, String(value));
                 }
               } catch (err) {
-                console.warn(`Variable "${variableName}" non définie dans le site web.`);
+                // Ne pas afficher d'avertissement - cela peut être du HTML légitime
               }
             }
             
@@ -713,8 +714,8 @@ ${footerHTML}
         const value = config[key];
         
         if (typeof value === 'string') {
-          // Chercher toutes les références de type ${variableName}
-          const variablePattern = /\${([^}]+)}/g;
+          // Ne traiter que les variables qui correspondent exactement au format ${varName}
+          const variablePattern = /\${([a-zA-Z0-9_]+)}/g;
           let processedValue = value;
           let match;
           
@@ -730,10 +731,15 @@ ${footerHTML}
               // Remplacer la référence par la valeur
               if (variableValue !== undefined) {
                 const valueStr = String(variableValue);
-                processedValue = processedValue.replace(fullMatch, valueStr);
+                // Créer un regex avec le full match échappé pour éviter les problèmes avec les caractères spéciaux
+                const regex = new RegExp(fullMatch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
+                processedValue = processedValue.replace(regex, valueStr);
               }
             } catch (error) {
-              console.warn(`Variable "${variableName}" non définie dans le site web, laissée telle quelle.`);
+              // Ne pas afficher d'avertissements pour les variables non définies dans le contenu HTML
+              if (key !== 'contenu' && key !== 'content' && key !== 'stylePersonnalisé' && key !== 'footerTexte') {
+                console.warn(`Variable "${variableName}" non définie dans le site web, laissée telle quelle.`);
+              }
             }
           }
           

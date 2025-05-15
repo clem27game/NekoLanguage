@@ -13,32 +13,32 @@ version = "1.0.0";
 // Création d'un site web avec variables
 neksite.créer {
   // Configuration globale
-  titre: "${titre}";
-  auteur: "${auteur}";
-  description: "Site demonstratif avec variables en NekoScript v${version}";
+  titre: titre;
+  auteur: auteur;
+  description: "Site demonstratif avec variables en NekoScript v" + version;
   avecNav: true;
   avecFooter: true;
-  footerTexte: "© 2025 ${auteur} - Version ${version}";
+  footerTexte: "© 2025 " + auteur + " - Version " + version;
   
   // Thème global
-  stylePersonnalisé: `
+  stylePersonnalisé: "
     .highlight {
-      background-color: ${couleurTheme};
-      color: white;
+      background-color: " + couleurTheme + ";
+      color: #ffffff;
       padding: 5px 10px;
       border-radius: 4px;
     }
-  `;
+  ";
 
   // Première page - Accueil
   page = "Accueil" {
     titre: "Page d'accueil";
-    contenu: `
-      <h1>${titre}</h1>
-      <p class="highlight">${messageAccueil}</p>
+    contenu: "
+      <h1>" + titre + "</h1>
+      <p class='highlight'>" + messageAccueil + "</p>
       <p>Ce site utilise des variables NekoScript pour personnaliser son contenu dynamiquement.</p>
-      <p>L'auteur est <strong>${auteur}</strong> et la version actuelle est <strong>${version}</strong>.</p>
-    `;
+      <p>L'auteur est <strong>" + auteur + "</strong> et la version actuelle est <strong>" + version + "</strong>.</p>
+    ";
     
     style {
       couleurFond: "#f5f5f5";
@@ -51,9 +51,9 @@ neksite.créer {
   
   // Deuxième page - À propos
   page = "À propos" {
-    titre: "À propos de ${titre}";
-    contenu: `
-      <h1>À propos de ${titre}</h1>
+    titre: "À propos de " + titre;
+    contenu: "
+      <h1>À propos de " + titre + "</h1>
       <p>Ce site démontre l'utilisation de variables dans le module neksite.</p>
       <p>Les variables peuvent être utilisées dans:</p>
       <ul>
@@ -62,8 +62,8 @@ neksite.créer {
         <li>Les styles personnalisés</li>
         <li>Le pied de page et la navigation</li>
       </ul>
-      <div class="highlight">Version actuelle: ${version}</div>
-    `;
+      <div class='highlight'>Version actuelle: " + version + "</div>
+    ";
     
     style {
       couleurFond: "#e8f4f8";
@@ -76,13 +76,13 @@ neksite.créer {
   
   // Troisième page - Contact
   page = "Contact" {
-    titre: "Contactez ${auteur}";
-    contenu: `
+    titre: "Contactez " + auteur;
+    contenu: "
       <h1>Contact</h1>
-      <p>Vous pouvez contacter l'auteur <strong>${auteur}</strong> par email:</p>
-      <p class="highlight">contact@${titre.toLowerCase().replace(/\s+/g, '-')}.fr</p>
-      <p>Merci d'avoir visité ${titre}!</p>
-    `;
+      <p>Vous pouvez contacter l'auteur <strong>" + auteur + "</strong> par email:</p>
+      <p class='highlight'>contact@monsite.fr</p>
+      <p>Merci d'avoir visité " + titre + "!</p>
+    ";
     
     style {
       couleurFond: "#f0f0e8";
