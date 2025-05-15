@@ -19,6 +19,15 @@ class NekoCLI {
     
     // Serveur de packages (démarré uniquement si nécessaire)
     this.packageServer = null;
+    
+    // Utiliser le nouveau gestionnaire de packages V2 s'il est disponible
+    try {
+      this.packageManagerV2 = require('../packageManager/packageManagerV2');
+      console.log("Centre de packages NekoScript avancé disponible.");
+    } catch (error) {
+      console.log("Centre de packages avancé non disponible, utilisation du mode standard.");
+      this.packageManagerV2 = null;
+    }
   }
 
   async run(args) {

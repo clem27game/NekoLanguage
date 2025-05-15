@@ -39,6 +39,7 @@
   "homepage": "https://github.com/clem27game/NekoLanguage/home",
   "dependencies": {
     "antlr4": "^4.13.2",
+    "axios": "^1.9.0",
     "body-parser": "^2.2.0",
     "express": "^5.1.0",
     "open": "^10.1.2",
