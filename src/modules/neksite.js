@@ -153,8 +153,26 @@ class NekoSite {
     // Extraire les pages du config
     let sitePages = [];
     
-    // Traiter les pages selon la structure fournie par l'utilisateur
-    if (config.page) {
+    // Vérifier d'abord si nous avons une structure "page" spéciale dans config
+    // Cette structure est un Array ou un objet spécial dans le runtime NekoScript
+    if (config.page && Array.isArray(config.page)) {
+      // Si c'est un tableau, traiter chaque élément comme une page
+      for (const pageEntry of config.page) {
+        if (typeof pageEntry === 'object' && pageEntry !== null) {
+          // Le premier élément (index 0) est généralement le nom/titre de la page
+          const pageTitle = pageEntry[0] || "Page";
+          const pageData = pageEntry[1] || {};
+          
+          // Créer un objet de configuration de page complet
+          const pageConfig = {
+            titre: pageTitle,
+            ...pageData
+          };
+          
+          sitePages.push(this.processPageConfig(pageConfig));
+        }
+      }
+    } else if (config.page && typeof config.page === 'object') {
       // Si config.page est un objet unique (une seule page)
       sitePages.push(this.processPageConfig(config.page));
     } else if (config.pages && Array.isArray(config.pages)) {
@@ -171,6 +189,9 @@ class NekoSite {
         }
       }
     }
+    
+    // Log pour debugger la structure des pages détectées
+    console.log(`Site web avec ${sitePages.length} pages.`);
 
     // Créer les pages HTML
     for (const page of sitePages) {
