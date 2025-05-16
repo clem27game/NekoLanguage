@@ -1,12 +1,14 @@
 /**
- * Centre de Packages NekoScript
+ * Centre de Packages NekoScript - Version Améliorée
  * Système robuste pour la distribution et la permanence des packages
+ * avec support amélioré des packages JavaScript natifs
  * 
  * Caractéristiques:
- * - Publication multi-niveaux (local, global, réseau)
+ * - Publication multi-niveaux simplifiée (local, global, réseau)
  * - Réplication automatique des packages entre instances
  * - Métadonnées enrichies et vérification de signatures
  * - Gestion avancée des versions et dépendances
+ * - Support du code JavaScript natif dans les packages
  */
 
 const fs = require('fs');
@@ -38,811 +40,756 @@ class PackageCenter {
   
   /**
    * Connecte le centre de packages à la base de données PostgreSQL
-   * Si la connexion échoue, utilise le stockage local
+   * Avec mécanisme de fallback amélioré vers le stockage local
    */
-  connectToDatabase() {
-    if (!process.env.DATABASE_URL) {
-      console.log("Variable d'environnement DATABASE_URL non définie, utilisation du stockage local");
-      this.useLocalStorage = true;
-      return;
-    }
-    
-    try {
-      this.pool = new Pool({
-        connectionString: process.env.DATABASE_URL,
-        connectionTimeoutMillis: 10000
-      });
-      
-      // Tester la connexion
-      this.pool.query('SELECT NOW()')
-        .then(() => {
-          console.log("Connexion PostgreSQL réussie pour le centre de packages");
-          this.useLocalStorage = false;
-        })
-        .catch(err => {
-          console.error("Échec de la connexion PostgreSQL:", err.message);
-          console.log("Utilisation du stockage local pour les packages");
-          this.useLocalStorage = true;
+  async connectToDatabase() {
+    if (process.env.DATABASE_URL) {
+      try {
+        this.pool = new Pool({
+          connectionString: process.env.DATABASE_URL,
+          ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
         });
-    } catch (error) {
-      console.error("Erreur lors de la configuration PostgreSQL:", error.message);
-      console.log("Utilisation du stockage local pour les packages");
+        
+        // Tester la connexion
+        await this.pool.query('SELECT NOW()');
+        console.log('Connexion PostgreSQL réussie pour le centre de packages');
+        
+        // Vérifier/créer la table des packages si nécessaire
+        await this._initDatabaseTables();
+        
+        this.useLocalStorage = false;
+        this.isInitialized = true;
+      } catch (error) {
+        console.warn('Erreur de connexion PostgreSQL:', error.message);
+        console.warn('Utilisation du stockage local pour les packages...');
+        this.useLocalStorage = true;
+        this._initLocalStorage();
+      }
+    } else {
+      console.log('Variable DATABASE_URL non définie, utilisation du stockage local');
       this.useLocalStorage = true;
+      this._initLocalStorage();
     }
   }
   
   /**
-   * Initialise le centre de packages et crée les structures nécessaires
+   * Initialise les tables nécessaires dans la base de données
+   * @private
    */
-  async initialize() {
-    if (this.isInitialized) return;
-    
+  async _initDatabaseTables() {
     try {
-      // Créer les répertoires de stockage si nécessaire
-      if (!fs.existsSync(this.nekoScriptDir)) {
-        fs.mkdirSync(this.nekoScriptDir, { recursive: true });
-      }
-      
-      if (!fs.existsSync(this.packagesDir)) {
-        fs.mkdirSync(this.packagesDir, { recursive: true });
-      }
-      
-      // Initialiser le registre local si nécessaire
-      if (!fs.existsSync(this.registryFile)) {
-        fs.writeFileSync(this.registryFile, JSON.stringify({
-          packages: {},
-          versions: {},
-          metadata: {
-            lastUpdate: new Date().toISOString(),
-            format: "1.0.0"
-          }
-        }, null, 2));
-      }
-      
-      // Initialiser la base de données PostgreSQL si utilisée
-      if (!this.useLocalStorage) {
-        await this.initializeDatabase();
-      }
-      
-      this.isInitialized = true;
-      console.log("Centre de packages NekoScript initialisé");
-      
-    } catch (error) {
-      console.error("Erreur d'initialisation du centre de packages:", error);
-      this.useLocalStorage = true; // Fallback vers stockage local
-    }
-  }
-  
-  /**
-   * Initialise la base de données PostgreSQL pour le stockage des packages
-   */
-  async initializeDatabase() {
-    try {
-      // Créer les tables nécessaires si elles n'existent pas
-      await this.pool.query(`
-        CREATE TABLE IF NOT EXISTS package_registry (
-          id SERIAL PRIMARY KEY,
-          name VARCHAR(255) NOT NULL UNIQUE,
-          description TEXT,
-          author VARCHAR(255),
-          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        );
-        
-        CREATE TABLE IF NOT EXISTS package_versions (
-          id SERIAL PRIMARY KEY,
-          package_id INTEGER REFERENCES package_registry(id) ON DELETE CASCADE,
-          version VARCHAR(50) NOT NULL,
-          content TEXT NOT NULL,
-          checksum VARCHAR(255),
-          downloads INTEGER DEFAULT 0,
-          published_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-          UNIQUE (package_id, version)
-        );
-        
-        CREATE TABLE IF NOT EXISTS package_metadata (
-          id SERIAL PRIMARY KEY,
-          package_id INTEGER REFERENCES package_registry(id) ON DELETE CASCADE,
-          key VARCHAR(255) NOT NULL,
-          value TEXT,
-          UNIQUE (package_id, key)
-        );
-        
-        CREATE TABLE IF NOT EXISTS package_dependencies (
-          id SERIAL PRIMARY KEY,
-          package_id INTEGER REFERENCES package_registry(id) ON DELETE CASCADE,
-          dependency_name VARCHAR(255) NOT NULL,
-          version_constraint VARCHAR(50),
-          is_optional BOOLEAN DEFAULT FALSE,
-          UNIQUE (package_id, dependency_name)
+      // Vérifier si la table des packages existe
+      const tableCheck = await this.pool.query(`
+        SELECT EXISTS (
+          SELECT FROM information_schema.tables 
+          WHERE table_name = 'nekoscript_packages'
         );
       `);
       
-      console.log("Schéma de base de données du centre de packages initialisé");
-    } catch (error) {
-      console.error("Erreur lors de l'initialisation de la base de données:", error);
-      this.useLocalStorage = true; // Fallback vers stockage local
-      throw error;
-    }
-  }
-  
-  /**
-   * Publie un package dans le centre de packages
-   * @param {string} name - Nom du package
-   * @param {string} content - Contenu du package
-   * @param {Object} options - Options de publication (version, auteur, description, etc.)
-   * @returns {Object} - Résultat de la publication
-   */
-  async publishPackage(name, content, options = {}) {
-    await this.initialize();
-    
-    const {
-      version = '1.0.0',
-      author = 'Utilisateur NekoScript',
-      description = '',
-      dependencies = {},
-      keywords = [],
-      isPrivate = false
-    } = options;
-    
-    // Valider les données
-    if (!name || typeof name !== 'string') {
-      throw new Error("Nom de package invalide");
-    }
-    
-    if (!content || typeof content !== 'string') {
-      throw new Error("Contenu de package invalide");
-    }
-    
-    // Générer un checksum pour le contenu
-    const checksum = crypto.createHash('sha256').update(content).digest('hex');
-    
-    try {
-      let result;
+      const tableExists = tableCheck.rows[0].exists;
       
-      // Utiliser le stockage local ou PostgreSQL
-      if (this.useLocalStorage) {
-        result = await this.publishPackageLocal(name, content, {
-          version,
-          author,
-          description,
-          checksum,
-          dependencies,
-          keywords,
-          isPrivate
-        });
-      } else {
-        result = await this.publishPackageDatabase(name, content, {
-          version,
-          author,
-          description,
-          checksum,
-          dependencies,
-          keywords,
-          isPrivate
-        });
+      if (!tableExists) {
+        // Créer la table des packages
+        await this.pool.query(`
+          CREATE TABLE nekoscript_packages (
+            id SERIAL PRIMARY KEY,
+            name VARCHAR(255) NOT NULL,
+            version VARCHAR(50) NOT NULL,
+            author VARCHAR(255),
+            description TEXT,
+            code TEXT NOT NULL,
+            is_native_js BOOLEAN DEFAULT false,
+            dependencies JSONB DEFAULT '{}',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(name, version)
+          );
+          
+          CREATE INDEX idx_packages_name ON nekoscript_packages(name);
+          CREATE INDEX idx_packages_name_version ON nekoscript_packages(name, version);
+        `);
+        
+        console.log('Table des packages créée avec succès');
       }
       
-      // Essayer de répliquer sur les serveurs distants (pour une future version)
-      // this.replicatePackage(name, content, options).catch(err => console.warn("Échec de réplication:", err.message));
-      
-      return {
-        ...result,
-        storageMode: this.useLocalStorage ? 'local' : 'global'
-      };
-    } catch (error) {
-      console.error(`Erreur lors de la publication du package ${name}:`, error);
-      
-      // Si erreur avec PostgreSQL, essayer le stockage local
-      if (!this.useLocalStorage) {
-        console.log("Basculement vers stockage local suite à une erreur...");
-        this.useLocalStorage = true;
-        return this.publishPackage(name, content, options);
-      }
-      
-      throw error;
-    }
-  }
-  
-  /**
-   * Publie un package en stockage local
-   * @private
-   */
-  async publishPackageLocal(name, content, options) {
-    const {
-      version,
-      author,
-      description,
-      checksum,
-      dependencies,
-      keywords,
-      isPrivate
-    } = options;
-    
-    // Charger le registre
-    const registry = JSON.parse(fs.readFileSync(this.registryFile, 'utf8'));
-    
-    // Vérifier si le package existe déjà
-    const packageExists = registry.packages[name] !== undefined;
-    let targetVersion = version;
-    let updated = false;
-    
-    if (packageExists) {
-      updated = true;
-      
-      // Vérifier si la version existe déjà
-      if (registry.versions[name] && registry.versions[name].includes(version)) {
-        // Incrémenter la version
-        const parts = version.split('.');
-        if (parts.length === 3) {
-          const [major, minor, patch] = parts.map(Number);
-          targetVersion = `${major}.${minor}.${patch + 1}`;
-          console.log(`Version ${version} existante pour ${name}, incrémentation à ${targetVersion}`);
-        }
-      }
-      
-      // Mettre à jour les métadonnées du package
-      registry.packages[name] = {
-        ...registry.packages[name],
-        version: targetVersion,
-        updated_at: new Date().toISOString(),
-        description: description || registry.packages[name].description,
-        author: author || registry.packages[name].author,
-        keywords: keywords.length ? keywords : registry.packages[name].keywords,
-        dependencies: { ...registry.packages[name].dependencies, ...dependencies }
-      };
-    } else {
-      // Créer une nouvelle entrée
-      registry.packages[name] = {
-        name,
-        version: targetVersion,
-        description,
-        author,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        downloads: 0,
-        keywords,
-        dependencies,
-        isPrivate
-      };
-      
-      // Initialiser la liste des versions
-      registry.versions[name] = [];
-    }
-    
-    // Ajouter la nouvelle version si elle n'existe pas déjà
-    if (!registry.versions[name].includes(targetVersion)) {
-      registry.versions[name].push(targetVersion);
-    }
-    
-    // Enregistrer le contenu du package
-    const packagePath = path.join(this.packagesDir, `${name}-${targetVersion}.pkg`);
-    fs.writeFileSync(packagePath, content);
-    
-    // Mettre à jour le registre
-    registry.metadata.lastUpdate = new Date().toISOString();
-    fs.writeFileSync(this.registryFile, JSON.stringify(registry, null, 2));
-    
-    return {
-      name,
-      version: targetVersion,
-      updated,
-      checksum
-    };
-  }
-  
-  /**
-   * Publie un package dans la base de données PostgreSQL
-   * @private
-   */
-  async publishPackageDatabase(name, content, options) {
-    const {
-      version,
-      author,
-      description,
-      checksum,
-      dependencies,
-      keywords,
-      isPrivate
-    } = options;
-    
-    let targetVersion = version;
-    let updated = false;
-    
-    // Vérifier si le package existe déjà
-    const existingPackage = await this.pool.query(
-      'SELECT id, name FROM package_registry WHERE name = $1',
-      [name]
-    );
-    
-    let packageId;
-    
-    if (existingPackage.rows.length > 0) {
-      // Le package existe, vérifier les versions
-      packageId = existingPackage.rows[0].id;
-      updated = true;
-      
-      // Vérifier si la version existe déjà
-      const versionCheck = await this.pool.query(
-        'SELECT id FROM package_versions WHERE package_id = $1 AND version = $2',
-        [packageId, version]
-      );
-      
-      if (versionCheck.rows.length > 0) {
-        // La version existe, incrémenter
-        const parts = version.split('.');
-        if (parts.length === 3) {
-          const [major, minor, patch] = parts.map(Number);
-          targetVersion = `${major}.${minor}.${patch + 1}`;
-          console.log(`Version ${version} existante pour ${name}, incrémentation à ${targetVersion}`);
-        }
-      }
-      
-      // Mettre à jour le package
-      await this.pool.query(
-        'UPDATE package_registry SET description = $1, author = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $3',
-        [description, author, packageId]
-      );
-    } else {
-      // Créer un nouveau package
-      const newPackage = await this.pool.query(
-        'INSERT INTO package_registry (name, description, author) VALUES ($1, $2, $3) RETURNING id',
-        [name, description, author]
-      );
-      
-      packageId = newPackage.rows[0].id;
-      
-      // Ajouter les métadonnées
-      if (keywords && keywords.length) {
-        await this.pool.query(
-          'INSERT INTO package_metadata (package_id, key, value) VALUES ($1, $2, $3)',
-          [packageId, 'keywords', JSON.stringify(keywords)]
-        );
-      }
-      
-      if (isPrivate) {
-        await this.pool.query(
-          'INSERT INTO package_metadata (package_id, key, value) VALUES ($1, $2, $3)',
-          [packageId, 'private', 'true']
-        );
-      }
-    }
-    
-    // Ajouter la nouvelle version
-    await this.pool.query(
-      'INSERT INTO package_versions (package_id, version, content, checksum) VALUES ($1, $2, $3, $4)',
-      [packageId, targetVersion, content, checksum]
-    );
-    
-    // Ajouter les dépendances
-    if (dependencies && Object.keys(dependencies).length > 0) {
-      // Supprimer les anciennes dépendances
-      await this.pool.query(
-        'DELETE FROM package_dependencies WHERE package_id = $1',
-        [packageId]
-      );
-      
-      // Ajouter les nouvelles dépendances
-      for (const [depName, versionConstraint] of Object.entries(dependencies)) {
-        await this.pool.query(
-          'INSERT INTO package_dependencies (package_id, dependency_name, version_constraint) VALUES ($1, $2, $3)',
-          [packageId, depName, versionConstraint]
-        );
-      }
-    }
-    
-    return {
-      name,
-      version: targetVersion,
-      updated,
-      checksum
-    };
-  }
-  
-  /**
-   * Télécharge un package depuis le centre de packages
-   * @param {string} name - Nom du package
-   * @param {string} version - Version spécifique (optionnel)
-   * @returns {string} - Contenu du package
-   */
-  async downloadPackage(name, version = null) {
-    await this.initialize();
-    
-    try {
-      let content;
-      
-      if (this.useLocalStorage) {
-        content = await this.downloadPackageLocal(name, version);
-      } else {
-        content = await this.downloadPackageDatabase(name, version);
-      }
-      
-      return content;
-    } catch (error) {
-      console.error(`Erreur lors du téléchargement du package ${name}:`, error);
-      
-      // Si erreur avec PostgreSQL, essayer le stockage local
-      if (!this.useLocalStorage) {
-        console.log("Basculement vers stockage local pour le téléchargement...");
-        this.useLocalStorage = true;
-        return this.downloadPackage(name, version);
-      }
-      
-      // Dernière chance: essayer de télécharger depuis un serveur de réplication
+      // Ajouter le champ is_native_js s'il n'existe pas (pour la rétrocompatibilité)
       try {
-        return await this.downloadPackageFromReplicationServer(name, version);
-      } catch (replicationError) {
-        console.error("Échec du téléchargement depuis les serveurs de réplication:", replicationError);
-        throw error;
+        await this.pool.query(`
+          ALTER TABLE nekoscript_packages 
+          ADD COLUMN IF NOT EXISTS is_native_js BOOLEAN DEFAULT false;
+        `);
+      } catch (error) {
+        // Ignorer les erreurs potentielles dans certaines versions de PostgreSQL
       }
+      
+    } catch (error) {
+      console.error('Erreur lors de l\'initialisation des tables:', error);
+      throw error;
     }
   }
   
   /**
-   * Télécharge un package depuis le stockage local
+   * Initialise le stockage local pour les packages
    * @private
    */
-  async downloadPackageLocal(name, version = null) {
-    // Charger le registre
-    const registry = JSON.parse(fs.readFileSync(this.registryFile, 'utf8'));
-    
-    // Vérifier si le package existe
-    if (!registry.packages[name]) {
-      throw new Error(`Package ${name} non trouvé dans le registre local`);
+  _initLocalStorage() {
+    // Créer les répertoires si nécessaires
+    if (!fs.existsSync(this.nekoScriptDir)) {
+      fs.mkdirSync(this.nekoScriptDir, { recursive: true });
     }
     
-    // Déterminer la version à télécharger
-    let targetVersion = version;
-    if (!targetVersion) {
-      // Utiliser la dernière version
-      targetVersion = registry.packages[name].version;
+    if (!fs.existsSync(this.packagesDir)) {
+      fs.mkdirSync(this.packagesDir, { recursive: true });
     }
     
-    // Vérifier si la version existe
-    if (!registry.versions[name] || !registry.versions[name].includes(targetVersion)) {
-      throw new Error(`Version ${targetVersion} du package ${name} non trouvée`);
+    // Initialiser le registre local s'il n'existe pas
+    if (!fs.existsSync(this.registryFile)) {
+      fs.writeFileSync(this.registryFile, JSON.stringify({
+        packages: [],
+        lastUpdated: new Date().toISOString()
+      }));
     }
     
-    // Charger le contenu du package
-    const packagePath = path.join(this.packagesDir, `${name}-${targetVersion}.pkg`);
-    
-    if (!fs.existsSync(packagePath)) {
-      throw new Error(`Fichier de package ${name}-${targetVersion}.pkg non trouvé`);
-    }
-    
-    // Incrémenter le compteur de téléchargements
-    registry.packages[name].downloads++;
-    fs.writeFileSync(this.registryFile, JSON.stringify(registry, null, 2));
-    
-    return fs.readFileSync(packagePath, 'utf8');
+    this.isInitialized = true;
   }
   
   /**
-   * Télécharge un package depuis la base de données
-   * @private
+   * Publie un package dans le répertoire central ou local
+   * @param {string} name - Nom du package
+   * @param {string} code - Code source du package
+   * @param {Object} options - Options supplémentaires (auteur, version, description, etc.)
+   * @returns {Promise<Object>} - Informations sur le package publié
    */
-  async downloadPackageDatabase(name, version = null) {
-    // Trouver le package
-    const packageQuery = await this.pool.query(
-      'SELECT id, name FROM package_registry WHERE name = $1',
-      [name]
-    );
-    
-    if (packageQuery.rows.length === 0) {
-      throw new Error(`Package ${name} non trouvé dans la base de données`);
+  async publishPackage(name, code, options = {}) {
+    if (!name || !code) {
+      throw new Error('Le nom et le code du package sont requis');
     }
     
-    const packageId = packageQuery.rows[0].id;
+    // Options par défaut
+    const defaults = {
+      version: '1.0.0',
+      author: 'Utilisateur NekoScript',
+      description: `Package ${name} pour NekoScript`,
+      isNativeJs: false,
+      dependencies: {}
+    };
     
-    // Déterminer la version à télécharger
-    let versionQuery;
+    // Fusionner les options avec les valeurs par défaut
+    const packageInfo = { ...defaults, ...options, name, code };
+    
+    try {
+      if (this.useLocalStorage) {
+        // Mode stockage local
+        await this._publishToLocalStorage(packageInfo);
+      } else {
+        // Mode base de données
+        await this._publishToDatabase(packageInfo);
+      }
+      
+      console.log(`Package ${name}@${packageInfo.version} publié avec succès`);
+      return packageInfo;
+    } catch (error) {
+      console.error('Erreur lors de la publication du package:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Publie un package dans la base de données
+   * @param {Object} packageInfo - Informations du package
+   * @private
+   */
+  async _publishToDatabase(packageInfo) {
+    try {
+      // Vérifier si le package avec cette version existe déjà
+      const existingPackage = await this.pool.query(
+        'SELECT id FROM nekoscript_packages WHERE name = $1 AND version = $2',
+        [packageInfo.name, packageInfo.version]
+      );
+      
+      if (existingPackage.rows.length > 0) {
+        // Mettre à jour le package existant
+        await this.pool.query(
+          `UPDATE nekoscript_packages 
+           SET 
+             code = $1, 
+             author = $2, 
+             description = $3, 
+             dependencies = $4,
+             is_native_js = $5
+           WHERE name = $6 AND version = $7`,
+          [
+            packageInfo.code,
+            packageInfo.author,
+            packageInfo.description,
+            JSON.stringify(packageInfo.dependencies),
+            packageInfo.isNativeJs,
+            packageInfo.name,
+            packageInfo.version
+          ]
+        );
+      } else {
+        // Insérer un nouveau package
+        await this.pool.query(
+          `INSERT INTO nekoscript_packages (name, version, author, description, code, dependencies, is_native_js)
+           VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+          [
+            packageInfo.name,
+            packageInfo.version,
+            packageInfo.author,
+            packageInfo.description,
+            packageInfo.code,
+            JSON.stringify(packageInfo.dependencies),
+            packageInfo.isNativeJs
+          ]
+        );
+      }
+    } catch (error) {
+      console.error('Erreur lors de la publication en base de données:', error);
+      
+      // Fallback au stockage local en cas d'erreur
+      console.log('Tentative de publication en stockage local...');
+      await this._publishToLocalStorage(packageInfo);
+    }
+  }
+  
+  /**
+   * Publie un package dans le stockage local
+   * @param {Object} packageInfo - Informations du package
+   * @private
+   */
+  async _publishToLocalStorage(packageInfo) {
+    try {
+      // Lire le registre existant
+      const registry = JSON.parse(fs.readFileSync(this.registryFile, 'utf8'));
+      
+      // Vérifier si le package existe déjà
+      const existingPackageIndex = registry.packages.findIndex(
+        p => p.name === packageInfo.name && p.version === packageInfo.version
+      );
+      
+      if (existingPackageIndex >= 0) {
+        // Mettre à jour le package existant
+        registry.packages[existingPackageIndex] = {
+          ...packageInfo,
+          updatedAt: new Date().toISOString()
+        };
+      } else {
+        // Ajouter le nouveau package
+        registry.packages.push({
+          ...packageInfo,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        });
+      }
+      
+      // Mettre à jour le registre
+      registry.lastUpdated = new Date().toISOString();
+      fs.writeFileSync(this.registryFile, JSON.stringify(registry, null, 2));
+      
+      // Sauvegarder le code du package dans un fichier séparé
+      const packageDir = path.join(this.packagesDir, packageInfo.name);
+      if (!fs.existsSync(packageDir)) {
+        fs.mkdirSync(packageDir, { recursive: true });
+      }
+      
+      // Le nom du fichier inclut la version pour éviter les conflits
+      const fileName = `${packageInfo.name}-${packageInfo.version}.${packageInfo.isNativeJs ? 'js' : 'neko'}`;
+      const filePath = path.join(packageDir, fileName);
+      fs.writeFileSync(filePath, packageInfo.code);
+      
+    } catch (error) {
+      console.error('Erreur lors de la publication en stockage local:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Récupère un package spécifique par son nom et sa version
+   * @param {string} name - Nom du package
+   * @param {string} version - Version du package (optionnel, dernière version par défaut)
+   * @returns {Promise<Object>} - Le package trouvé
+   */
+  async getPackage(name, version = null) {
+    if (!name) {
+      throw new Error('Le nom du package est requis');
+    }
+    
+    try {
+      let packageData;
+      
+      if (this.useLocalStorage) {
+        packageData = await this._getPackageFromLocalStorage(name, version);
+      } else {
+        packageData = await this._getPackageFromDatabase(name, version);
+      }
+      
+      if (!packageData) {
+        throw new Error(`Package ${name}${version ? `@${version}` : ''} non trouvé`);
+      }
+      
+      return packageData;
+    } catch (error) {
+      console.error('Erreur lors de la récupération du package:', error);
+      
+      // Si l'erreur vient de la base de données, essayer le stockage local
+      if (!this.useLocalStorage) {
+        console.log('Tentative de récupération depuis le stockage local...');
+        try {
+          return await this._getPackageFromLocalStorage(name, version);
+        } catch (localError) {
+          console.error('Erreur également en local:', localError);
+          throw error; // Conserver l'erreur originale
+        }
+      }
+      
+      throw error;
+    }
+  }
+  
+  /**
+   * Récupère un package depuis la base de données
+   * @param {string} name - Nom du package
+   * @param {string} version - Version du package (optionnel)
+   * @returns {Promise<Object>} - Le package trouvé
+   * @private
+   */
+  async _getPackageFromDatabase(name, version = null) {
+    let query, params;
     
     if (version) {
-      // Version spécifique
-      versionQuery = await this.pool.query(
-        'SELECT id, version, content FROM package_versions WHERE package_id = $1 AND version = $2',
-        [packageId, version]
-      );
+      // Récupérer une version spécifique
+      query = 'SELECT * FROM nekoscript_packages WHERE name = $1 AND version = $2';
+      params = [name, version];
     } else {
-      // Dernière version (par date de publication)
-      versionQuery = await this.pool.query(
-        'SELECT id, version, content FROM package_versions WHERE package_id = $1 ORDER BY published_at DESC LIMIT 1',
-        [packageId]
-      );
+      // Récupérer la dernière version
+      query = `
+        SELECT * FROM nekoscript_packages 
+        WHERE name = $1 
+        ORDER BY 
+          CASE 
+            WHEN version ~ '^\\d+\\.\\d+\\.\\d+$' THEN 
+              ARRAY[
+                CAST(split_part(version, '.', 1) AS INTEGER),
+                CAST(split_part(version, '.', 2) AS INTEGER),
+                CAST(split_part(version, '.', 3) AS INTEGER)
+              ]
+            ELSE ARRAY[0, 0, 0]
+          END DESC
+        LIMIT 1
+      `;
+      params = [name];
     }
     
-    if (versionQuery.rows.length === 0) {
-      throw new Error(`Version ${version || 'latest'} du package ${name} non trouvée`);
+    const result = await this.pool.query(query, params);
+    
+    if (result.rows.length === 0) {
+      return null;
     }
     
-    // Incrémenter le compteur de téléchargements
-    await this.pool.query(
-      'UPDATE package_versions SET downloads = downloads + 1 WHERE id = $1',
-      [versionQuery.rows[0].id]
-    );
+    const packageData = result.rows[0];
     
-    return versionQuery.rows[0].content;
+    // Convertir les dépendances JSON en objet
+    if (typeof packageData.dependencies === 'string') {
+      packageData.dependencies = JSON.parse(packageData.dependencies);
+    }
+    
+    return packageData;
   }
   
   /**
-   * Télécharge un package depuis un serveur de réplication
-   * Méthode pour futures versions avec réplication inter-serveurs
+   * Récupère un package depuis le stockage local
+   * @param {string} name - Nom du package
+   * @param {string} version - Version du package (optionnel)
+   * @returns {Promise<Object>} - Le package trouvé
    * @private
    */
-  async downloadPackageFromReplicationServer(name, version = null) {
-    // Essayer chaque serveur de réplication
-    for (const server of this.replicationServers) {
-      try {
-        // NOTE: Cette fonctionnalité sera implémentée dans une version future
-        // Pour l'instant, simuler un échec
-        throw new Error("Fonction de réplication non implémentée");
-      } catch (error) {
-        console.warn(`Échec de téléchargement depuis ${server}:`, error.message);
-      }
+  async _getPackageFromLocalStorage(name, version = null) {
+    // Lire le registre local
+    const registry = JSON.parse(fs.readFileSync(this.registryFile, 'utf8'));
+    
+    let packageInfo;
+    
+    if (version) {
+      // Récupérer une version spécifique
+      packageInfo = registry.packages.find(
+        p => p.name === name && p.version === version
+      );
+    } else {
+      // Trier les packages par version et prendre le plus récent
+      const packages = registry.packages
+        .filter(p => p.name === name)
+        .sort((a, b) => {
+          const versionA = a.version.split('.').map(Number);
+          const versionB = b.version.split('.').map(Number);
+          
+          for (let i = 0; i < 3; i++) {
+            if (versionA[i] !== versionB[i]) {
+              return versionB[i] - versionA[i]; // Ordre décroissant
+            }
+          }
+          
+          return 0;
+        });
+      
+      packageInfo = packages[0]; // Le premier est le plus récent
     }
     
-    throw new Error(`Package ${name} non trouvé sur aucun serveur de réplication`);
+    if (!packageInfo) {
+      return null;
+    }
+    
+    // Lire le contenu du fichier
+    const packageDir = path.join(this.packagesDir, name);
+    const fileName = `${name}-${packageInfo.version}.${packageInfo.isNativeJs ? 'js' : 'neko'}`;
+    const filePath = path.join(packageDir, fileName);
+    
+    try {
+      const code = fs.readFileSync(filePath, 'utf8');
+      return { ...packageInfo, code };
+    } catch (error) {
+      // Si le fichier n'existe pas, utiliser le code du registre
+      return packageInfo;
+    }
+  }
+  
+  /**
+   * Recherche des packages par nom ou description
+   * @param {string} query - Terme de recherche
+   * @param {Object} options - Options de recherche (limite, offset, etc.)
+   * @returns {Promise<Array>} - Les packages trouvés
+   */
+  async searchPackages(query, options = {}) {
+    const defaults = {
+      limit: 20,
+      offset: 0,
+      includeCode: false
+    };
+    
+    const searchOptions = { ...defaults, ...options };
+    
+    try {
+      let results;
+      
+      if (this.useLocalStorage) {
+        results = await this._searchPackagesInLocalStorage(query, searchOptions);
+      } else {
+        results = await this._searchPackagesInDatabase(query, searchOptions);
+      }
+      
+      return results;
+    } catch (error) {
+      console.error('Erreur lors de la recherche de packages:', error);
+      
+      // Fallback au stockage local en cas d'erreur
+      if (!this.useLocalStorage) {
+        console.log('Tentative de recherche en stockage local...');
+        return await this._searchPackagesInLocalStorage(query, searchOptions);
+      }
+      
+      throw error;
+    }
+  }
+  
+  /**
+   * Recherche des packages dans la base de données
+   * @param {string} query - Terme de recherche
+   * @param {Object} options - Options de recherche
+   * @returns {Promise<Array>} - Les packages trouvés
+   * @private
+   */
+  async _searchPackagesInDatabase(query, options) {
+    const { limit, offset, includeCode } = options;
+    
+    // Construire la projection SQL
+    const projection = includeCode 
+      ? '*' 
+      : 'id, name, version, author, description, dependencies, is_native_js, created_at';
+    
+    // Recherche textuelle sur nom et description
+    const sqlQuery = `
+      SELECT ${projection} FROM nekoscript_packages
+      WHERE 
+        name ILIKE $1 OR
+        description ILIKE $1
+      ORDER BY 
+        CASE WHEN name ILIKE $2 THEN 0 ELSE 1 END,
+        created_at DESC
+      LIMIT $3 OFFSET $4
+    `;
+    
+    const result = await this.pool.query(sqlQuery, [
+      `%${query}%`,       // Recherche partielle
+      `${query}%`,        // Priorité aux correspondances exactes
+      limit,
+      offset
+    ]);
+    
+    return result.rows.map(row => {
+      // Convertir les dépendances JSON en objet
+      if (typeof row.dependencies === 'string') {
+        row.dependencies = JSON.parse(row.dependencies);
+      }
+      return row;
+    });
+  }
+  
+  /**
+   * Recherche des packages dans le stockage local
+   * @param {string} query - Terme de recherche
+   * @param {Object} options - Options de recherche
+   * @returns {Promise<Array>} - Les packages trouvés
+   * @private
+   */
+  async _searchPackagesInLocalStorage(query, options) {
+    const { limit, offset, includeCode } = options;
+    
+    // Lire le registre local
+    const registry = JSON.parse(fs.readFileSync(this.registryFile, 'utf8'));
+    
+    // Filtre sur nom et description
+    let filteredPackages = registry.packages.filter(pkg => {
+      const name = pkg.name.toLowerCase();
+      const description = (pkg.description || '').toLowerCase();
+      const searchTerm = query.toLowerCase();
+      
+      return name.includes(searchTerm) || description.includes(searchTerm);
+    });
+    
+    // Trier par pertinence (exacte d'abord, puis date)
+    filteredPackages.sort((a, b) => {
+      // Priorité aux correspondances exactes
+      const aExact = a.name.toLowerCase().startsWith(query.toLowerCase());
+      const bExact = b.name.toLowerCase().startsWith(query.toLowerCase());
+      
+      if (aExact && !bExact) return -1;
+      if (!aExact && bExact) return 1;
+      
+      // Sinon par date de création (le plus récent d'abord)
+      const aDate = new Date(a.createdAt || 0);
+      const bDate = new Date(b.createdAt || 0);
+      return bDate - aDate;
+    });
+    
+    // Appliquer limite et offset
+    filteredPackages = filteredPackages.slice(offset, offset + limit);
+    
+    // Charger le code si nécessaire
+    if (includeCode) {
+      for (const pkg of filteredPackages) {
+        if (!pkg.code) {
+          try {
+            const packageDir = path.join(this.packagesDir, pkg.name);
+            const fileName = `${pkg.name}-${pkg.version}.${pkg.isNativeJs ? 'js' : 'neko'}`;
+            const filePath = path.join(packageDir, fileName);
+            pkg.code = fs.readFileSync(filePath, 'utf8');
+          } catch (error) {
+            // Si le fichier n'existe pas, laisser code undefined
+          }
+        }
+      }
+    } else {
+      // Si le code n'est pas demandé, le supprimer pour alléger
+      filteredPackages.forEach(pkg => {
+        delete pkg.code;
+      });
+    }
+    
+    return filteredPackages;
   }
   
   /**
    * Liste tous les packages disponibles
-   * @param {Object} options - Options de recherche
-   * @returns {Array} - Liste des packages
+   * @param {Object} options - Options de listage
+   * @returns {Promise<Array>} - Les packages disponibles
    */
-  async listPackages(options = {}) {
-    await this.initialize();
+  async listAllPackages(options = {}) {
+    const defaults = {
+      limit: 100,
+      offset: 0,
+      includeCode: false
+    };
     
-    const {
-      limit = 100,
-      offset = 0,
-      search = '',
-      category = '',
-      sort = 'downloads'
-    } = options;
+    const listOptions = { ...defaults, ...options };
     
     try {
-      let packages;
+      let results;
       
       if (this.useLocalStorage) {
-        packages = await this.listPackagesLocal(options);
+        results = await this._listPackagesFromLocalStorage(listOptions);
       } else {
-        packages = await this.listPackagesDatabase(options);
+        results = await this._listPackagesFromDatabase(listOptions);
       }
       
-      return packages;
+      return results;
     } catch (error) {
-      console.error("Erreur lors de la liste des packages:", error);
+      console.error('Erreur lors du listage des packages:', error);
       
-      // Si erreur avec PostgreSQL, essayer le stockage local
+      // Fallback au stockage local en cas d'erreur
       if (!this.useLocalStorage) {
-        console.log("Basculement vers stockage local pour la liste des packages...");
-        this.useLocalStorage = true;
-        return this.listPackages(options);
+        console.log('Tentative de listage en stockage local...');
+        return await this._listPackagesFromLocalStorage(listOptions);
       }
       
       throw error;
     }
-  }
-  
-  /**
-   * Liste les packages depuis le stockage local
-   * @private
-   */
-  async listPackagesLocal(options) {
-    const { limit, offset, search, category, sort } = options;
-    
-    // Charger le registre
-    const registry = JSON.parse(fs.readFileSync(this.registryFile, 'utf8'));
-    
-    // Filtrer les packages
-    let packages = Object.values(registry.packages);
-    
-    if (search) {
-      const searchLower = search.toLowerCase();
-      packages = packages.filter(pkg => 
-        pkg.name.toLowerCase().includes(searchLower) ||
-        (pkg.description && pkg.description.toLowerCase().includes(searchLower))
-      );
-    }
-    
-    if (category) {
-      packages = packages.filter(pkg => 
-        pkg.keywords && pkg.keywords.includes(category)
-      );
-    }
-    
-    // Trier les packages
-    if (sort === 'downloads') {
-      packages.sort((a, b) => (b.downloads || 0) - (a.downloads || 0));
-    } else if (sort === 'name') {
-      packages.sort((a, b) => a.name.localeCompare(b.name));
-    } else if (sort === 'updated') {
-      packages.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
-    }
-    
-    // Paginer les résultats
-    return packages.slice(offset, offset + limit);
   }
   
   /**
    * Liste les packages depuis la base de données
+   * @param {Object} options - Options de listage
+   * @returns {Promise<Array>} - Les packages listés
    * @private
    */
-  async listPackagesDatabase(options) {
-    const { limit, offset, search, category, sort } = options;
+  async _listPackagesFromDatabase(options) {
+    const { limit, offset, includeCode } = options;
     
-    let query = `
-      SELECT 
-        r.id, r.name, r.description, r.author, 
-        r.created_at, r.updated_at,
-        v.version,
-        (SELECT SUM(downloads) FROM package_versions WHERE package_id = r.id) as downloads
-      FROM 
-        package_registry r
-      LEFT JOIN (
-        SELECT DISTINCT ON (package_id) package_id, version, published_at
-        FROM package_versions
-        ORDER BY package_id, published_at DESC
-      ) v ON v.package_id = r.id
+    // Construire la projection SQL
+    const projection = includeCode 
+      ? '*' 
+      : 'id, name, version, author, description, dependencies, is_native_js, created_at';
+    
+    // Lister les packages uniques (dernière version seulement)
+    const sqlQuery = `
+      WITH RankedPackages AS (
+        SELECT 
+          ${projection},
+          ROW_NUMBER() OVER (PARTITION BY name ORDER BY 
+            CASE 
+              WHEN version ~ '^\\d+\\.\\d+\\.\\d+$' THEN 
+                ARRAY[
+                  CAST(split_part(version, '.', 1) AS INTEGER),
+                  CAST(split_part(version, '.', 2) AS INTEGER),
+                  CAST(split_part(version, '.', 3) AS INTEGER)
+                ]
+              ELSE ARRAY[0, 0, 0]
+            END DESC
+          ) as rn
+        FROM 
+          nekoscript_packages
+      )
+      SELECT * FROM RankedPackages 
+      WHERE rn = 1
+      ORDER BY name ASC
+      LIMIT $1 OFFSET $2
     `;
     
-    const queryParams = [];
-    let conditions = [];
+    const result = await this.pool.query(sqlQuery, [limit, offset]);
     
-    // Appliquer les filtres
-    if (search) {
-      queryParams.push(`%${search}%`);
-      conditions.push(`(r.name ILIKE $${queryParams.length} OR r.description ILIKE $${queryParams.length})`);
-    }
-    
-    if (category) {
-      queryParams.push(category);
-      conditions.push(`EXISTS (
-        SELECT 1 FROM package_metadata 
-        WHERE package_id = r.id AND key = 'keywords' AND value LIKE $${queryParams.length}
-      )`);
-    }
-    
-    if (conditions.length) {
-      query += " WHERE " + conditions.join(" AND ");
-    }
-    
-    // Tri
-    if (sort === 'downloads') {
-      query += " ORDER BY downloads DESC NULLS LAST";
-    } else if (sort === 'name') {
-      query += " ORDER BY r.name ASC";
-    } else if (sort === 'updated') {
-      query += " ORDER BY r.updated_at DESC";
-    }
-    
-    // Pagination
-    query += ` LIMIT $${queryParams.length + 1} OFFSET $${queryParams.length + 2}`;
-    queryParams.push(limit, offset);
-    
-    const result = await this.pool.query(query, queryParams);
-    return result.rows;
+    return result.rows.map(row => {
+      // Convertir les dépendances JSON en objet
+      if (typeof row.dependencies === 'string') {
+        row.dependencies = JSON.parse(row.dependencies);
+      }
+      return row;
+    });
   }
   
   /**
-   * Obtient les informations détaillées d'un package
-   * @param {string} name - Nom du package
-   * @returns {Object} - Informations du package
-   */
-  async getPackageInfo(name) {
-    await this.initialize();
-    
-    try {
-      let packageInfo;
-      
-      if (this.useLocalStorage) {
-        packageInfo = await this.getPackageInfoLocal(name);
-      } else {
-        packageInfo = await this.getPackageInfoDatabase(name);
-      }
-      
-      return packageInfo;
-    } catch (error) {
-      console.error(`Erreur lors de la récupération des informations du package ${name}:`, error);
-      
-      // Si erreur avec PostgreSQL, essayer le stockage local
-      if (!this.useLocalStorage) {
-        console.log("Basculement vers stockage local pour les informations de package...");
-        this.useLocalStorage = true;
-        return this.getPackageInfo(name);
-      }
-      
-      throw error;
-    }
-  }
-  
-  /**
-   * Obtient les informations d'un package depuis le stockage local
+   * Liste les packages depuis le stockage local
+   * @param {Object} options - Options de listage
+   * @returns {Promise<Array>} - Les packages listés
    * @private
    */
-  async getPackageInfoLocal(name) {
-    // Charger le registre
+  async _listPackagesFromLocalStorage(options) {
+    const { limit, offset, includeCode } = options;
+    
+    // Lire le registre local
     const registry = JSON.parse(fs.readFileSync(this.registryFile, 'utf8'));
     
-    // Vérifier si le package existe
-    if (!registry.packages[name]) {
-      throw new Error(`Package ${name} non trouvé dans le registre local`);
-    }
-    
-    const packageInfo = registry.packages[name];
-    
-    // Ajouter l'historique des versions
-    packageInfo.versions = (registry.versions[name] || []).map(version => ({
-      version,
-      published_at: packageInfo.created_at // Simplification pour le stockage local
-    }));
-    
-    return packageInfo;
-  }
-  
-  /**
-   * Obtient les informations d'un package depuis la base de données
-   * @private
-   */
-  async getPackageInfoDatabase(name) {
-    // Trouver le package
-    const packageQuery = await this.pool.query(
-      `SELECT 
-        r.id, r.name, r.description, r.author, r.created_at, r.updated_at,
-        (SELECT SUM(downloads) FROM package_versions WHERE package_id = r.id) as downloads
-      FROM 
-        package_registry r
-      WHERE 
-        r.name = $1`,
-      [name]
-    );
-    
-    if (packageQuery.rows.length === 0) {
-      throw new Error(`Package ${name} non trouvé dans la base de données`);
-    }
-    
-    const packageInfo = packageQuery.rows[0];
-    const packageId = packageInfo.id;
-    
-    // Récupérer l'historique des versions
-    const versionsQuery = await this.pool.query(
-      `SELECT version, published_at 
-      FROM package_versions 
-      WHERE package_id = $1 
-      ORDER BY published_at DESC`,
-      [packageId]
-    );
-    
-    packageInfo.versions = versionsQuery.rows;
-    
-    // Récupérer les métadonnées
-    const metadataQuery = await this.pool.query(
-      `SELECT key, value FROM package_metadata WHERE package_id = $1`,
-      [packageId]
-    );
-    
-    for (const row of metadataQuery.rows) {
-      if (row.key === 'keywords') {
-        packageInfo.keywords = JSON.parse(row.value);
-      } else {
-        packageInfo[row.key] = row.value;
+    // Regrouper par nom et prendre la version la plus récente
+    const packageMap = new Map();
+    for (const pkg of registry.packages) {
+      if (!packageMap.has(pkg.name) || this._compareVersions(pkg.version, packageMap.get(pkg.name).version) > 0) {
+        packageMap.set(pkg.name, pkg);
       }
     }
     
-    // Récupérer les dépendances
-    const dependenciesQuery = await this.pool.query(
-      `SELECT dependency_name, version_constraint FROM package_dependencies WHERE package_id = $1`,
-      [packageId]
-    );
+    // Convertir en tableau et trier par nom
+    let uniquePackages = Array.from(packageMap.values()).sort((a, b) => a.name.localeCompare(b.name));
     
-    packageInfo.dependencies = {};
-    for (const row of dependenciesQuery.rows) {
-      packageInfo.dependencies[row.dependency_name] = row.version_constraint;
+    // Appliquer limite et offset
+    uniquePackages = uniquePackages.slice(offset, offset + limit);
+    
+    // Charger le code si nécessaire
+    if (includeCode) {
+      for (const pkg of uniquePackages) {
+        if (!pkg.code) {
+          try {
+            const packageDir = path.join(this.packagesDir, pkg.name);
+            const fileName = `${pkg.name}-${pkg.version}.${pkg.isNativeJs ? 'js' : 'neko'}`;
+            const filePath = path.join(packageDir, fileName);
+            pkg.code = fs.readFileSync(filePath, 'utf8');
+          } catch (error) {
+            // Si le fichier n'existe pas, laisser code undefined
+          }
+        }
+      }
+    } else {
+      // Si le code n'est pas demandé, le supprimer pour alléger
+      uniquePackages.forEach(pkg => {
+        delete pkg.code;
+      });
     }
     
-    delete packageInfo.id; // Supprimer l'ID de la base de données
+    return uniquePackages;
+  }
+  
+  /**
+   * Compare deux versions selon la spécification semver
+   * @param {string} a - Première version
+   * @param {string} b - Deuxième version
+   * @returns {number} - 1 si a > b, -1 si a < b, 0 si égales
+   * @private
+   */
+  _compareVersions(a, b) {
+    const aParts = a.split('.').map(Number);
+    const bParts = b.split('.').map(Number);
     
-    return packageInfo;
+    for (let i = 0; i < 3; i++) {
+      if (aParts[i] > bParts[i]) return 1;
+      if (aParts[i] < bParts[i]) return -1;
+    }
+    
+    return 0;
+  }
+  
+  /**
+   * Charge un package JavaScript natif dans NekoScript
+   * Cette méthode permet d'intégrer du code JavaScript directement comme un module NekoScript
+   * @param {string} name - Nom du package
+   * @param {string} jsCode - Code JavaScript du package
+   * @param {Object} options - Options supplémentaires
+   * @returns {Promise<Object>} - Informations sur le package publié
+   */
+  async loadNativeJsPackage(name, jsCode, options = {}) {
+    const packageOptions = {
+      ...options,
+      isNativeJs: true
+    };
+    
+    return await this.publishPackage(name, jsCode, packageOptions);
+  }
+  
+  /**
+   * Convertit un package JavaScript natif en package NekoScript
+   * @param {string} jsCode - Code JavaScript du package
+   * @returns {string} - Code NekoScript équivalent
+   */
+  convertJsToNekoScript(jsCode) {
+    // Encapsule le code JavaScript dans un wrapper NekoScript
+    return `// Package JavaScript natif converti en NekoScript
+// Ce code est un wrapper autour de JavaScript natif
+
+// Code JavaScript natif
+_jsCode = \`
+${jsCode}
+\`;
+
+// Exécuter le code JavaScript et exposer les exports
+_exports = nekEvalJS(_jsCode);
+
+// Exposer les fonctions exportées dans NekoScript
+nekExportJsFunctions(_exports);`;
   }
 }
 
