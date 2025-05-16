@@ -3,8 +3,8 @@
 
 nekImporter("neksite");
 
-// Définir des variables pour personnaliser le site
-siteConfig = {
+// Définir des variables globales pour personnaliser le site
+var siteConfig = {
   titre: "Super Site NekoScript",
   sousTitre: "Créé avec la puissance des variables NekoScript",
   auteur: "Développeur NekoScript",
@@ -12,6 +12,14 @@ siteConfig = {
   description: "Un site web dynamique créé avec NekoScript",
   annee: 2025
 };
+
+// Définir ces variables individuellement pour qu'elles soient accessibles dans le runtime
+var titre = siteConfig.titre;
+var sousTitre = siteConfig.sousTitre;
+var auteur = siteConfig.auteur;
+var couleur = siteConfig.couleur; 
+var description = siteConfig.description;
+var annee = siteConfig.annee;
 
 // Création du site web avec la configuration utilisateur
 neksite.créer {

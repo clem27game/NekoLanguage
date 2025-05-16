@@ -1,0 +1,35 @@
+// Site web simple pour tester la génération
+nekImporter("neksite");
+
+// Variables globales simples
+var titre = "Mon Site Simple";
+var description = "Un site de démonstration pour NekoScript";
+var couleur = "#3498db";
+
+// Création du site
+neksite.créer {
+  // Configuration globale
+  titre: titre;
+  description: description;
+  
+  // Page d'accueil simple avec contenu défini directement
+  page = "Accueil" {
+    contenu: "
+      <div style='text-align: center; margin: 30px 0;'>
+        <h1 style='color: " + couleur + ";'>" + titre + "</h1>
+        <p>" + description + "</p>
+      </div>
+      <div style='max-width: 600px; margin: 0 auto;'>
+        <h2>Bienvenue sur mon site!</h2>
+        <p>Ce site est généré avec NekoScript en utilisant des variables simples.</p>
+        <ul>
+          <li>Variable titre: " + titre + "</li>
+          <li>Variable description: " + description + "</li>
+          <li>Variable couleur: " + couleur + "</li>
+        </ul>
+      </div>
+    ";
+  }
+}
+
+neko = ("Site web créé avec succès!");

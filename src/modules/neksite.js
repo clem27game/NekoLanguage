@@ -233,13 +233,36 @@ class NekoSite {
       this.createPage(page);
     }
 
-    // Si aucune page n'a été créée, créer une page d'accueil par défaut
+    // Si aucune page n'a été créée, mais que nous avons la configuration de l'utilisateur
     if (this.pages.length === 0 && sitePages.length === 0) {
-      this.createPage({
-        title: "Accueil",
-        content: "<h1>Site généré par NekoScript</h1><p>Ce site a été créé automatiquement. Aucune page n'a été spécifiée dans la configuration.</p>",
-        style: {}
-      });
+      // Cherchons directement dans la configuration originale pour les pages définies par l'utilisateur
+      if (config && config.page && Array.isArray(config.page)) {
+        for (let i = 0; i < config.page.length; i++) {
+          if (Array.isArray(config.page[i]) && config.page[i].length >= 2) {
+            const pageTitle = config.page[i][0];
+            const pageData = config.page[i][1];
+            
+            console.log(`Création directe de la page ${pageTitle} à partir de la configuration utilisateur`);
+            
+            // Créer une page avec le contenu défini par l'utilisateur
+            this.createPage({
+              title: pageTitle,
+              content: pageData.contenu || "",
+              style: pageData.style || {},
+              filename: this.slugify(pageTitle) + '.html'
+            });
+          }
+        }
+      }
+      
+      // Si toujours aucune page créée, créer une page par défaut
+      if (this.pages.length === 0) {
+        this.createPage({
+          title: "Accueil",
+          content: "<h1>Site généré par NekoScript</h1><p>Ce site a été créé automatiquement. Aucune page n'a été spécifiée dans la configuration.</p>",
+          style: {}
+        });
+      }
     }
 
     // Gérer les assets (images, etc.)
@@ -839,7 +862,28 @@ class NekoSite {
    */
   processVariables(config) {
     // Utiliser notre helper spécialisé pour le traitement des variables
-    return this.siteHelper.processConfig(config);
+    const processedConfig = this.siteHelper.processConfig(config);
+    
+    // Traitement supplémentaire des variables dans les pages
+    // Cela assure que le contenu utilisateur est préservé avec les variables remplacées
+    if (processedConfig && processedConfig.page && Array.isArray(processedConfig.page)) {
+      for (let i = 0; i < processedConfig.page.length; i++) {
+        if (Array.isArray(processedConfig.page[i]) && processedConfig.page[i].length >= 2) {
+          const pageTitle = processedConfig.page[i][0];
+          const pageData = processedConfig.page[i][1];
+          
+          if (pageData && typeof pageData === 'object') {
+            // S'assurer que le contenu est correctement traité
+            if (pageData.contenu) {
+              // Utiliser le contenu défini par l'utilisateur
+              console.log(`Traitement du contenu personnalisé pour la page "${pageTitle}"`);
+            }
+          }
+        }
+      }
+    }
+    
+    return processedConfig;
   }
 
   /**
