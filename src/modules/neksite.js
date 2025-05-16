@@ -2,6 +2,7 @@
  * Module NekoSite pour NekoScript
  * Permet la création simplifiée de sites web avec serveur localhost intégré
  * Entièrement personnalisable par l'utilisateur
+ * Version améliorée avec support avancé des variables utilisateur
  */
 
 const fs = require('fs');
@@ -13,7 +14,7 @@ const { exec } = require('child_process');
 const { NekoSiteHelper } = require('../interpreter/nekoSiteHelper');
 
 // Rediriger les avertissements de variables non définies vers une fonction silencieuse
-// Cela évite d'afficher les faux positifs lors du parsing HTML
+// pour éviter les faux positifs avec le HTML
 const originalConsoleWarn = console.warn;
 console.warn = function(...args) {
   // Filtrer les messages concernant les variables non définies dans le HTML
@@ -79,16 +80,16 @@ console.warn = function(...args) {
 class NekoSite {
   constructor(runtime) {
     this.runtime = runtime;
+    this.port = 5000;
+    this.outputDir = './site-output';
     this.pages = [];
     this.assets = [];
-    this.outputDir = './site-output';
-    this.port = 5000; // Port unique pour le serveur localhost
     this.server = null;
     
-    // Initialiser notre helper de gestion des variables
+    // Créer un assistant pour le traitement des variables
     this.siteHelper = new NekoSiteHelper(runtime);
     
-    // Thèmes prédéfinis que l'utilisateur peut modifier
+    // Thèmes prédéfinis pour le site
     this.themes = {
       clair: {
         couleurFond: "#f9f9f9",
@@ -343,67 +344,126 @@ class NekoSite {
   }
   
   /**
-   * Traite les liens d'une page
+   * Traite les liens d'une page, avec gestion améliorée des formats variés
+   * Prend en charge différentes syntaxes utilisées par les développeurs NekoScript
+   * 
+   * @param {string|object|array} linkData - Données du lien à traiter
+   * @param {object} processedConfig - Configuration de page à mettre à jour
    */
   processLinks(linkData, processedConfig) {
+    // Si linkData est null ou undefined, ne rien faire
+    if (!linkData) return;
+    
+    // Cas 1: linkData est un tableau (plusieurs liens)
     if (Array.isArray(linkData)) {
       for (const link of linkData) {
-        if (typeof link === 'string') {
-          processedConfig.links.push({ 
-            text: link, 
-            url: this.slugify(link) + '.html' 
-          });
-        } else if (Array.isArray(link) && link.length >= 2) {
-          processedConfig.links.push({ 
-            text: link[0], 
-            url: link[1] 
-          });
-        } else if (typeof link === 'object' && link.texte) {
-          processedConfig.links.push({ 
-            text: link.texte || link.text, 
-            url: link.url || this.slugify(link.texte || link.text) + '.html',
-            target: link.target || '_self',
-            class: link.class || '',
-            id: link.id || ''
-          });
-        }
+        this._processSingleLink(link, processedConfig);
       }
-    } else if (typeof linkData === 'string') {
-      processedConfig.links.push({ 
-        text: linkData, 
-        url: this.slugify(linkData) + '.html' 
-      });
-    } else if (typeof linkData === 'object' && linkData.texte) {
-      processedConfig.links.push({ 
-        text: linkData.texte || linkData.text, 
-        url: linkData.url || this.slugify(linkData.texte || linkData.text) + '.html',
-        target: linkData.target || '_self',
-        class: linkData.class || '',
-        id: linkData.id || ''
-      });
+    } 
+    // Cas 2: linkData est une chaîne ou un objet (un seul lien)
+    else {
+      this._processSingleLink(linkData, processedConfig);
     }
   }
   
+  /**
+   * Traite un lien individuel dans n'importe quel format supporté
+   * @private
+   */
+  _processSingleLink(link, processedConfig) {
+    // Format 1: Simple chaîne de caractères (nom de la page)
+    if (typeof link === 'string') {
+      processedConfig.links.push({ 
+        text: link, 
+        url: this.slugify(link) + '.html',
+        title: link,
+        isPage: true
+      });
+    } 
+    // Format 2: Tableau [texte, url]
+    else if (Array.isArray(link) && link.length >= 2) {
+      const isExternal = String(link[1]).includes('://');
+      processedConfig.links.push({ 
+        text: link[0], 
+        url: link[1],
+        title: link[0],
+        isExternal: isExternal,
+        target: isExternal ? '_blank' : '_self'
+      });
+    } 
+    // Format 3: Objet avec propriétés détaillées
+    else if (typeof link === 'object' && link !== null) {
+      // Normaliser les propriétés (accepter les noms en français et anglais)
+      const text = link.texte || link.text || 'Lien';
+      const url = link.url || link.lien || this.slugify(text) + '.html';
+      const isExternal = url.includes('://') || (link.isExternal || link.externe || false);
+      
+      processedConfig.links.push({ 
+        text: text,
+        url: url,
+        title: link.titre || link.title || text,
+        target: link.target || link.cible || (isExternal ? '_blank' : '_self'),
+        class: link.class || link.classe || '',
+        id: link.id || '',
+        icon: link.icon || link.icone || null,
+        isExternal: isExternal,
+        isPage: !isExternal
+      });
+    }
+  }
+
   /**
    * Traite les images d'une page
    */
   processImages(imageData, processedConfig) {
     if (Array.isArray(imageData)) {
       for (const image of imageData) {
-        if (typeof image === 'string') {
-          processedConfig.images.push(image);
-          this.assets.push(image);
-        } else if (typeof image === 'object' && image.src) {
-          processedConfig.images.push(image.src);
-          this.assets.push(image.src);
-        }
+        this._processSingleImage(image, processedConfig);
       }
-    } else if (typeof imageData === 'string') {
-      processedConfig.images.push(imageData);
-      this.assets.push(imageData);
-    } else if (typeof imageData === 'object' && imageData.src) {
-      processedConfig.images.push(imageData.src);
-      this.assets.push(imageData.src);
+    } else {
+      this._processSingleImage(imageData, processedConfig);
+    }
+  }
+  
+  /**
+   * Traite une seule image avec différents formats possibles
+   * @private
+   */
+  _processSingleImage(image, processedConfig) {
+    // Format 1: Simple chaîne = chemin de l'image
+    if (typeof image === 'string') {
+      const filename = path.basename(image);
+      processedConfig.images.push({
+        src: image,
+        alt: filename,
+        title: filename
+      });
+      this.assets.push(image);
+    }
+    // Format 2: Tableau [src, alt]
+    else if (Array.isArray(image) && image.length >= 2) {
+      processedConfig.images.push({
+        src: image[0],
+        alt: image[1] || '',
+        title: image[2] || image[1] || ''
+      });
+      this.assets.push(image[0]);
+    }
+    // Format 3: Objet avec propriétés détaillées
+    else if (typeof image === 'object' && image !== null) {
+      processedConfig.images.push({
+        src: image.src || image.source || '',
+        alt: image.alt || image.texte || '',
+        title: image.title || image.titre || image.alt || '',
+        width: image.width || image.largeur || 'auto',
+        height: image.height || image.hauteur || 'auto',
+        class: image.class || image.classe || '',
+        id: image.id || ''
+      });
+      
+      if (image.src || image.source) {
+        this.assets.push(image.src || image.source);
+      }
     }
   }
 
@@ -412,41 +472,17 @@ class NekoSite {
    * @param {Object} pageConfig - Configuration de la page
    */
   createPage(pageConfig) {
-    // Utiliser le nom de fichier spécifié ou en créer un à partir du titre
-    const filename = pageConfig.filename || this.slugify(pageConfig.title) + '.html';
-    const filepath = path.join(this.outputDir, filename);
-    
-    // Si l'utilisateur a fourni du HTML brut, l'utiliser tel quel
-    if (pageConfig.rawHtml) {
-      try {
-        fs.writeFileSync(filepath, pageConfig.rawHtml);
-        console.log(`Page créée (HTML brut): ${filepath}`);
-        this.pages.push({ 
-          title: pageConfig.title, 
-          path: filepath, 
-          filename: filename 
-        });
-        return;
-      } catch (error) {
-        console.error(`Erreur lors de la création de la page ${pageConfig.title} (HTML brut):`, error);
-      }
-    }
-
-    // Sinon, compiler le HTML à partir de la config
+    // Générer le code HTML
     const html = this.generateHTML(pageConfig);
-
-    // Écrire le fichier
-    try {
-      fs.writeFileSync(filepath, html);
-      console.log(`Page créée: ${filepath}`);
-      this.pages.push({ 
-        title: pageConfig.title, 
-        path: filepath, 
-        filename: filename 
-      });
-    } catch (error) {
-      console.error(`Erreur lors de la création de la page ${pageConfig.title}:`, error);
-    }
+    
+    // Créer le fichier HTML
+    const filePath = path.join(this.outputDir, pageConfig.filename);
+    fs.writeFileSync(filePath, html);
+    
+    // Stocker la page dans la liste des pages pour référence
+    this.pages.push(pageConfig);
+    
+    console.log(`Page créée: ${filePath}`);
   }
 
   /**
@@ -455,19 +491,18 @@ class NekoSite {
    * @returns {string} - Code HTML généré
    */
   generateHTML(pageConfig) {
-    const { title, content, style, links, scripts } = pageConfig;
+    // Fusion des styles globaux et spécifiques à la page
+    const mergedStyle = {
+      ...this.siteConfig.theme
+    };
     
-    // Fusionner les styles de la page avec le thème global
-    // Assurer que style est bien un objet pour éviter les erreurs
-    const pageStyle = typeof style === 'object' && style !== null ? style : {};
-    const mergedStyle = { ...this.siteConfig.theme, ...pageStyle };
-    
-    // Conserver le contenu original avec variables (le remplacement se fera côté client)
-    // Stocker les variables pour les afficher plus tard
-    let processedContent = content;
-    
-    // Vérifier que le contenu est bien une chaîne de caractères
-    if (typeof processedContent !== 'string') {
+    // Vérifier si la page a un contenu ou un HTML brut
+    let processedContent = pageConfig.content;
+    if (pageConfig.rawHtml) {
+      // Si rawHtml est fourni, l'utiliser directement
+      processedContent = pageConfig.rawHtml;
+    } else {
+      // Sinon, s'assurer que le contenu est une chaîne
       processedContent = String(processedContent || '');
     }
 
@@ -500,92 +535,65 @@ class NekoSite {
     if (this.siteConfig.stylePersonnalisé) {
       cssStyles += '\n' + this.siteConfig.stylePersonnalisé;
     }
-
-    // Construire les liens de navigation
-    let linksHTML = '';
-    if (this.siteConfig.avecNav && links && Array.isArray(links)) {
-      linksHTML = links.map(link => {
-        const target = link.target ? ` target="${link.target}"` : '';
-        const cls = link.class ? ` class="${link.class}"` : '';
-        const id = link.id ? ` id="${link.id}"` : '';
-        return `<a href="${link.url}"${target}${cls}${id}>${link.text}</a>`;
-      }).join('\n  ');
-    }
-
-    // Ajouter les liens vers les autres pages seulement si navigation activée
+    
+    // Générer les liens de navigation
+    let navLinks = '';
     if (this.siteConfig.avecNav && pageConfig.navigation) {
-      const otherPagesLinks = this.pages
-        .filter(page => page.filename !== (pageConfig.filename || this.slugify(title) + '.html'))
-        .map(page => `<a href="${page.filename}">${page.title}</a>`)
-        .join('\n  ');
+      const links = [...this.pages, pageConfig].filter((p, index, self) => 
+        // Filtrer les doublons par nom de fichier
+        index === self.findIndex(t => t.filename === p.filename)
+      );
       
-      if (otherPagesLinks) {
-        if (linksHTML) linksHTML += '\n  ';
-        linksHTML += otherPagesLinks;
-      }
+      navLinks = links.map(page => 
+        `<a href="${page.filename}">${page.title}</a>`
+      ).join('\n      ');
     }
     
-    // Construire les métadonnées
-    let metaTags = '';
-    if (pageConfig.meta) {
-      for (const [name, content] of Object.entries(pageConfig.meta)) {
-        metaTags += `  <meta name="${name}" content="${content}">\n`;
-      }
+    // Ajouter les liens spécifiques à la page
+    let pageLinks = '';
+    if (pageConfig.links && pageConfig.links.length > 0) {
+      pageLinks = pageConfig.links.map(link => {
+        if (link.isExternal) {
+          return `<a href="${link.url}" target="${link.target || '_blank'}" title="${link.title || link.text}">${link.text}</a>`;
+        } else {
+          return `<a href="${link.url}" title="${link.title || link.text}">${link.text}</a>`;
+        }
+      }).join('\n      ');
     }
     
-    // Ajouter les métadonnées globales du site
-    metaTags += `  <meta name="description" content="${this.siteConfig.description}">\n`;
-    metaTags += `  <meta name="author" content="${this.siteConfig.auteur}">\n`;
-    
-    // Générer le footer si activé
-    let footerHTML = '';
-    if (this.siteConfig.avecFooter) {
-      footerHTML = `
-    <footer>
-      ${this.siteConfig.footerTexte}
-    </footer>`;
-    }
-    
-    // Scripts personnalisés
-    let scriptContent = 'console.log("Site généré par NekoScript");';
-    if (scripts) {
-      scriptContent += '\n    ' + scripts;
-    }
-    if (this.siteConfig.scriptPersonnalisé) {
-      scriptContent += '\n    ' + this.siteConfig.scriptPersonnalisé;
-    }
-
-    // Construire le HTML final
-    return `<!DOCTYPE html>
-<html lang="${this.siteConfig.langue}">
+    // Générer le HTML complet
+    const html = `<!DOCTYPE html>
+<html lang="${this.siteConfig.langue || 'fr'}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-${metaTags}
-  <title>${title} - ${this.siteConfig.titre}</title>
+  <meta name="description" content="${this.siteConfig.description}">
+  <meta name="author" content="${this.siteConfig.auteur}">
+
+  <title>${pageConfig.title} - ${this.siteConfig.titre}</title>
   <style>
     body {
-      font-family: ${mergedStyle.police || "Arial, sans-serif"};
+      font-family: ${mergedStyle.police || 'Arial, sans-serif'};
       margin: 0;
       padding: 20px;
       line-height: 1.6;
-      background-color: ${mergedStyle.couleurFond || "#f9f9f9"};
-      color: ${mergedStyle.couleurTexte || "#333333"};
+      background-color: ${mergedStyle.couleurFond || '#f9f9f9'};
+      color: ${mergedStyle.couleurTexte || '#333333'};
     }
     .container {
       max-width: 800px;
       margin: 0 auto;
       padding: 20px;
-      background-color: ${mergedStyle.couleurContenuFond || "#ffffff"};
-      border-radius: ${mergedStyle.bordureRayon || "8px"};
-      box-shadow: 0 2px 4px ${mergedStyle.bordureCouleur || "rgba(0,0,0,0.1)"};
+      background-color: #ffffff;
+      border-radius: ${mergedStyle.bordureRayon || '8px'};
+      box-shadow: 0 2px 4px ${mergedStyle.bordureCouleur || '#eaeaea'};
     }
     h1, h2, h3, h4, h5, h6 {
-      color: ${mergedStyle.couleurTitre || "#222222"};
+      color: ${mergedStyle.couleurTitre || '#222222'};
       margin-top: 0;
     }
     a {
-      color: ${mergedStyle.couleurLien || "#0066cc"};
+      color: ${mergedStyle.couleurLien || '#0066cc'};
       text-decoration: none;
       margin-right: 15px;
     }
@@ -604,30 +612,39 @@ ${metaTags}
       margin-top: 20px;
       text-align: center;
       font-size: 0.8em;
-      color: ${mergedStyle.couleurFooter || "#666666"};
+      color: #666666;
     }
     ${cssStyles}
   </style>
-${this.siteConfig.favicon ? `  <link rel="icon" href="${this.siteConfig.favicon}">` : ''}
+
 </head>
 <body>
   <div class="container">
-    <h1>${title}</h1>
-    <div class="content">
-      ${content}
-    </div>
-    ${this.siteConfig.avecNav && linksHTML ? `
-    <div class="nav">
-      ${linksHTML}
+    <h1>${pageConfig.title}</h1>
+    ${this.siteConfig.avecNav ? `<div class="nav">
+      ${navLinks}
     </div>` : ''}
-${footerHTML}
+    <div class="content">
+      ${processedContent}
+    </div>
+    ${pageLinks ? `<div class="page-links">
+      ${pageLinks}
+    </div>` : ''}
+
+    ${this.siteConfig.avecFooter ? `<footer>
+      ${this.siteConfig.footerTexte}
+    </footer>` : ''}
   </div>
   
   <script>
-    ${scriptContent}
+    console.log("Site généré par NekoScript");
+    ${pageConfig.scripts || ''}
+    ${this.siteConfig.scriptPersonnalisé || ''}
   </script>
 </body>
 </html>`;
+
+    return html;
   }
 
   /**
@@ -635,23 +652,21 @@ ${footerHTML}
    * @param {string} assetPath - Chemin de l'asset
    */
   copyAsset(assetPath) {
+    const destination = path.join(this.outputDir, path.basename(assetPath));
+    
     try {
-      const filename = path.basename(assetPath);
-      const destination = path.join(this.outputDir, filename);
-      
+      // Vérifier si le fichier existe
       if (fs.existsSync(assetPath)) {
         fs.copyFileSync(assetPath, destination);
-        console.log(`Asset copié: ${destination}`);
+        console.log(`Asset copié: ${assetPath} -> ${destination}`);
       } else {
-        console.warn(`Asset non trouvé: ${assetPath}`);
-        
-        // Créer un fichier d'image de remplacement si c'est une image
-        if (filename.match(/\.(jpg|jpeg|png|gif|svg)$/i)) {
-          this.createPlaceholderImage(destination);
-        }
+        // Si le fichier n'existe pas, créer une image de remplacement
+        this.createPlaceholderImage(destination);
       }
     } catch (error) {
-      console.error(`Erreur lors de la copie de l'asset ${assetPath}:`, error);
+      console.error(`Erreur lors de la copie de l'asset: ${assetPath}`, error);
+      // Créer une image de remplacement en cas d'erreur
+      this.createPlaceholderImage(destination);
     }
   }
 
@@ -691,161 +706,95 @@ ${footerHTML}
     // Servir les fichiers statiques depuis le répertoire de sortie
     app.use(express.static(this.outputDir));
     
-    // Intercepter toutes les requêtes pour les pages pour remplacer les variables dynamiques
-    const that = this; // Référence à l'instance NekoSite
-    
-    app.use((req, res, next) => {
-      // Stocker la méthode send originale pour l'intercepter
-      const originalSend = res.send;
-      
-      // Remplacer la méthode send pour traiter le contenu avant envoi
-      res.send = function(body) {
-        // Ne traiter que les réponses HTML
-        if (typeof body === 'string' && body.includes('<!DOCTYPE html>')) {
-          try {
-            // Utiliser notre helper pour remplacer les variables
-            const processedBody = that.siteHelper.replaceVariables(body);
-            
-            // Appeler la méthode send originale avec le contenu traité
-            return originalSend.call(this, processedBody);
-          } catch (error) {
-            console.error('Erreur lors du traitement des variables dans la page:', error);
-          }
-        }
-        
-        // Si ce n'est pas du HTML ou en cas d'erreur, envoyer le contenu original
-        return originalSend.call(this, body);
-      };
-      
-      next();
-    });
-    
-    // Redirection de la racine vers index.html
+    // Route pour la page d'accueil
     app.get('/', (req, res) => {
-      const indexPage = this.pages.find(page => 
+      const homePage = this.pages.find(page => 
         page.filename === 'index.html' || 
         page.filename === 'accueil.html' || 
-        page.title.toLowerCase() === 'accueil'
+        page.title.toLowerCase() === 'accueil' ||
+        page.title.toLowerCase() === 'home'
       );
       
-      if (indexPage) {
-        res.redirect(`/${indexPage.filename}`);
+      if (homePage) {
+        res.sendFile(path.join(process.cwd(), this.outputDir, homePage.filename));
       } else if (this.pages.length > 0) {
-        res.redirect(`/${this.pages[0].filename}`);
+        // Si pas de page d'accueil explicite, utiliser la première page
+        res.sendFile(path.join(process.cwd(), this.outputDir, this.pages[0].filename));
       } else {
-        res.send('Site NekoScript - Aucune page disponible');
+        res.status(404).send('Aucune page trouvée');
       }
     });
     
-    // API pour accéder aux variables du runtime (utilisation interne seulement)
-    app.get('/api/variables', (req, res) => {
-      try {
-        // Récupérer toutes les variables disponibles
-        const variables = {};
-        // Note: dépend de l'implémentation du runtime, à adapter si nécessaire
-        if (this.runtime && this.runtime.scope) {
-          Object.keys(this.runtime.scope).forEach(key => {
-            try {
-              const value = this.runtime.getVariable(key);
-              variables[key] = value;
-            } catch (e) {
-              // Ignorer les variables qu'on ne peut pas récupérer
-            }
-          });
+    // Endpoint debug pour voir les variables disponibles dans le site
+    app.get('/_debug_variables', (req, res) => {
+      const variables = {};
+      
+      for (let i = 0; i < this.runtime.scopes.length; i++) {
+        const scope = this.runtime.scopes[i];
+        for (const key in scope) {
+          if (typeof scope[key] !== 'function') {
+            variables[key] = scope[key];
+          }
         }
-        res.json(variables);
-      } catch (error) {
-        res.status(500).json({ error: 'Erreur lors de la récupération des variables' });
       }
+      
+      res.json({
+        variables,
+        pages: this.pages.map(page => ({
+          title: page.title,
+          filename: page.filename,
+          links: page.links
+        })),
+        config: this.siteConfig
+      });
     });
     
-    // Endpoint pour afficher les variables disponibles dans une page HTML
-    app.get('/debug-variables', (req, res) => {
-      try {
-        // Récupérer toutes les variables disponibles
-        const variables = {};
-        if (this.runtime && this.runtime.scope) {
-          Object.keys(this.runtime.scope).forEach(key => {
-            try {
-              const value = this.runtime.getVariable(key);
-              variables[key] = value;
-            } catch (e) {
-              // Ignorer les variables qu'on ne peut pas récupérer
-            }
-          });
+    // Route de fallback pour les autres pages
+    app.get('/:page', (req, res) => {
+      const pageName = req.params.page;
+      
+      // Chercher la page directement par nom de fichier
+      const page = this.pages.find(p => p.filename === pageName);
+      
+      if (page) {
+        res.sendFile(path.join(process.cwd(), this.outputDir, page.filename));
+      } else {
+        // Essayer avec l'extension .html
+        const pageWithHtml = this.pages.find(p => p.filename === pageName + '.html');
+        
+        if (pageWithHtml) {
+          res.sendFile(path.join(process.cwd(), this.outputDir, pageWithHtml.filename));
+        } else {
+          // Sinon, chercher par titre (slugifié)
+          const pageByTitle = this.pages.find(p => 
+            this.slugify(p.title) === pageName || 
+            this.slugify(p.title) + '.html' === pageName
+          );
+          
+          if (pageByTitle) {
+            res.sendFile(path.join(process.cwd(), this.outputDir, pageByTitle.filename));
+          } else {
+            res.status(404).send('Page non trouvée');
+          }
         }
-        
-        // Générer une page HTML pour afficher les variables
-        const html = `
-        <!DOCTYPE html>
-        <html lang="fr">
-        <head>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Variables NekoScript</title>
-          <style>
-            body { font-family: Arial, sans-serif; margin: 20px; }
-            h1 { color: #333; }
-            table { border-collapse: collapse; width: 100%; }
-            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-            th { background-color: #f2f2f2; }
-            tr:nth-child(even) { background-color: #f9f9f9; }
-          </style>
-        </head>
-        <body>
-          <h1>Variables NekoScript disponibles</h1>
-          <table>
-            <tr>
-              <th>Nom</th>
-              <th>Valeur</th>
-              <th>Type</th>
-            </tr>
-            ${Object.entries(variables).map(([key, value]) => `
-              <tr>
-                <td>${key}</td>
-                <td>${typeof value === 'object' ? JSON.stringify(value) : String(value)}</td>
-                <td>${typeof value}</td>
-              </tr>
-            `).join('')}
-          </table>
-        </body>
-        </html>
-        `;
-        
-        res.send(html);
-      } catch (error) {
-        res.status(500).send(`<h1>Erreur</h1><p>${error.message}</p>`);
       }
     });
     
-    // Démarrer le serveur
+    // Démarrer le serveur sur le port configuré
     this.server = app.listen(this.port, '0.0.0.0', () => {
       console.log(`Serveur NekoScript démarré sur http://localhost:${this.port}`);
       
-      // Ouvrir le navigateur selon la plateforme
+      // Ouvrir le navigateur automatiquement
       try {
-        const url = `http://localhost:${this.port}`;
-        let command;
-        
-        switch (process.platform) {
-          case 'darwin': // macOS
-            command = `open "${url}"`;
-            break;
-          case 'win32': // Windows
-            command = `start "" "${url}"`;
-            break;
-          default: // Linux et autres
-            command = `xdg-open "${url}"`;
-            break;
+        if (process.platform === 'darwin') {
+          exec(`open http://localhost:${this.port}`);
+        } else if (process.platform === 'win32') {
+          exec(`start http://localhost:${this.port}`);
+        } else {
+          exec(`xdg-open http://localhost:${this.port}`);
         }
-        
-        exec(command, (error) => {
-          if (error) {
-            console.log(`Le navigateur n'a pas pu être ouvert automatiquement. Veuillez visiter: ${url}`);
-          }
-        });
       } catch (error) {
-        console.log(`Le navigateur n'a pas pu être ouvert automatiquement. Accédez à http://localhost:${this.port} dans votre navigateur.`);
+        console.log(`Impossible d'ouvrir le navigateur automatiquement: ${error.message}`);
       }
     });
   }
