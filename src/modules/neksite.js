@@ -280,6 +280,11 @@ class NekoSite {
       pageConfig = { titre: pageConfig };
     }
     
+    // Vérifier que pageConfig est un objet valide
+    if (!pageConfig || typeof pageConfig !== 'object') {
+      pageConfig = { titre: defaultTitle };
+    }
+    
     // Extraire le titre soit de la propriété "titre", soit du nom par défaut
     let pageTitle = pageConfig.titre || defaultTitle;
     
@@ -472,17 +477,35 @@ class NekoSite {
    * @param {Object} pageConfig - Configuration de la page
    */
   createPage(pageConfig) {
-    // Générer le code HTML
-    const html = this.generateHTML(pageConfig);
+    // Vérifier que pageConfig est défini et a une propriété filename
+    if (!pageConfig) {
+      console.error("Configuration de page est undefined");
+      return;
+    }
     
-    // Créer le fichier HTML
-    const filePath = path.join(this.outputDir, pageConfig.filename);
-    fs.writeFileSync(filePath, html);
+    // S'assurer que filename existe toujours, même en cas d'erreur précédente
+    if (!pageConfig.filename) {
+      // Utiliser le titre de la page ou une valeur par défaut pour créer un nom de fichier
+      const title = pageConfig.title || "page";
+      pageConfig.filename = this.slugify(title) + '.html';
+      console.log(`Nom de fichier généré automatiquement: ${pageConfig.filename}`);
+    }
     
-    // Stocker la page dans la liste des pages pour référence
-    this.pages.push(pageConfig);
-    
-    console.log(`Page créée: ${filePath}`);
+    try {
+      // Générer le code HTML
+      const html = this.generateHTML(pageConfig);
+      
+      // Créer le fichier HTML
+      const filePath = path.join(this.outputDir, pageConfig.filename);
+      fs.writeFileSync(filePath, html);
+      
+      // Stocker la page dans la liste des pages pour référence
+      this.pages.push(pageConfig);
+      
+      console.log(`Page créée: ${filePath}`);
+    } catch (error) {
+      console.error(`Erreur lors de la création de la page ${pageConfig.title || 'inconnue'}:`, error);
+    }
   }
 
   /**
