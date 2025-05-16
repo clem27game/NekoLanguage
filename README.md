@@ -12,8 +12,9 @@ NekoScript est un langage de programmation indépendant basé sur le français, 
 
 ```bash
 # Cloner le dépôt
-git clone https://github.com/votre-username/nekoscript.git
-cd nekoscript
+git clone https://github.com/clem27game/NekoLanguage
+
+cd NekoLanguage 
 
 # Option 1: Installation automatique (Linux/Mac)
 chmod +x install.sh
