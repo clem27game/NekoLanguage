@@ -153,45 +153,79 @@ class NekoSite {
     // Extraire les pages du config
     let sitePages = [];
     
-    // Vérifier d'abord si nous avons une structure "page" spéciale dans config
-    // Cette structure est un Array ou un objet spécial dans le runtime NekoScript
-    if (config.page && Array.isArray(config.page)) {
-      // Si c'est un tableau, traiter chaque élément comme une page
-      for (const pageEntry of config.page) {
-        if (typeof pageEntry === 'object' && pageEntry !== null) {
-          // Le premier élément (index 0) est généralement le nom/titre de la page
-          const pageTitle = pageEntry[0] || "Page";
+    // Approche améliorée pour détecter les pages dans différentes structures
+    
+    // 1. Analyser la structure "page = Title {...}" qui devient un tableau dans le runtime
+    if (Array.isArray(config.page)) {
+      console.log("Détection de pages (format tableau)...");
+      for (let i = 0; i < config.page.length; i++) {
+        const pageEntry = config.page[i];
+        
+        // Un élément de page peut être une chaîne (juste le titre) ou un objet avec titre et contenu
+        if (typeof pageEntry === 'string') {
+          sitePages.push(this.processPageConfig({ titre: pageEntry }));
+        } 
+        // Ou un tableau [titre, données] qui vient de notre syntaxe page = "Titre" {...}
+        else if (Array.isArray(pageEntry) && pageEntry.length >= 2) {
+          const pageTitle = pageEntry[0];
           const pageData = pageEntry[1] || {};
           
-          // Créer un objet de configuration de page complet
-          const pageConfig = {
+          sitePages.push(this.processPageConfig({
             titre: pageTitle,
             ...pageData
-          };
-          
-          sitePages.push(this.processPageConfig(pageConfig));
+          }));
+        }
+        // Ou un objet direct avec des propriétés
+        else if (typeof pageEntry === 'object' && pageEntry !== null) {
+          sitePages.push(this.processPageConfig(pageEntry));
         }
       }
-    } else if (config.page && typeof config.page === 'object') {
-      // Si config.page est un objet unique (une seule page)
+    } 
+    // 2. Chercher un objet pages[] qui contient un tableau de définitions de pages
+    else if (config.pages && Array.isArray(config.pages)) {
+      console.log("Détection de pages (format pages[])...");
+      for (const page of config.pages) {
+        sitePages.push(this.processPageConfig(page));
+      }
+    }
+    // 3. Chercher un objet page unique
+    else if (config.page && typeof config.page === 'object') {
+      console.log("Détection de page (format objet unique)...");
       sitePages.push(this.processPageConfig(config.page));
-    } else if (config.pages && Array.isArray(config.pages)) {
-      // Si config.pages est un tableau de pages
-      sitePages = config.pages.map(page => this.processPageConfig(page));
-    } else {
-      // Chercher toutes les déclarations de page dans le config
+    }
+    // 4. Recherche générique de structures de page dans l'objet de configuration
+    else {
+      console.log("Recherche générique de pages dans la configuration...");
+      // Chercher toutes les clés qui ressemblent à des déclarations de page
       for (const key in config) {
         const value = config[key];
-        // Une page est un objet qui contient au moins titre ou contenu
-        if (typeof value === 'object' && (value.titre || value.contenu)) {
-          const pageName = key.startsWith('page') ? key.replace('page', '').trim() : key;
+        
+        // Une page peut être définie de plusieurs façons :
+        if (
+          // Cas 1: Une clé "page" ou "pageX" avec un objet contenant titre/contenu
+          (key === 'page' || key.startsWith('page')) && 
+          typeof value === 'object' && 
+          (value.titre || value.contenu)
+        ) {
+          const pageName = key === 'page' ? 'Page' : key.replace('page', '').trim();
           sitePages.push(this.processPageConfig(value, pageName));
+        }
+        // Cas 2: Objet avec propriétés titre et contenu directement dans la config
+        else if (
+          typeof value === 'object' && 
+          !Array.isArray(value) && 
+          value !== null &&
+          (value.titre || value.contenu) &&
+          // Filtrer les clés réservées à la configuration globale
+          !['theme', 'style', 'stylePersonnalisé', 'favicon'].includes(key)
+        ) {
+          sitePages.push(this.processPageConfig(value, key));
         }
       }
     }
     
     // Log pour debugger la structure des pages détectées
-    console.log(`Site web avec ${sitePages.length} pages.`);
+    console.log(`Site web avec ${sitePages.length} pages détectées.`);
 
     // Créer les pages HTML
     for (const page of sitePages) {
@@ -253,6 +287,9 @@ class NekoSite {
       pageTitle = pageConfig.titre || `Page ${defaultTitle}`;
     }
 
+    // Journaliser la structure de la page pour le débogage
+    console.log(`Traitement de la page "${pageTitle}"...`);
+
     // Créer une configuration normalisée avec toutes les propriétés possibles
     // Attention à ne pas écraser les propriétés d'origine
     const processedConfig = {
@@ -267,7 +304,10 @@ class NekoSite {
       filename: pageConfig.filename || this.slugify(pageTitle) + '.html',
       navigation: pageConfig.navigation !== undefined ? pageConfig.navigation : true,
       template: pageConfig.template || "standard",
-      rawHtml: pageConfig.rawHtml || null
+      rawHtml: pageConfig.rawHtml || null,
+      
+      // Préserver les propriétés originales pour référence et traitement ultérieur
+      originalConfig: JSON.parse(JSON.stringify(pageConfig))
     };
 
     // Traiter les liens
