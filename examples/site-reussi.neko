@@ -1,0 +1,284 @@
+// Site web fonctionnel avec NekoScript - Solution garantie
+// Cette approche contourne les problèmes de variables en utilisant les fonctions JS directement
+
+nekImporter("interne");
+
+// Créer les fichiers HTML directement
+nekExecuterJS(`
+  // Modules requis pour la création de fichiers
+  const fs = require('fs');
+  const path = require('path');
+  
+  // Variables pour le site
+  const siteInfo = {
+    titre: "Site NekoScript Avancé",
+    description: "Un site web dynamique créé avec NekoScript",
+    couleur: "#3498db",
+    auteur: "Équipe NekoScript",
+    annee: 2025
+  };
+  
+  // Créer le répertoire de sortie s'il n'existe pas
+  const outputDir = 'site-output';
+  if (!fs.existsSync(outputDir)) {
+    fs.mkdirSync(outputDir, { recursive: true });
+  }
+  
+  // Template HTML commun pour toutes les pages
+  function createHtmlTemplate(title, content) {
+    return \`<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="\${siteInfo.description}">
+  <meta name="author" content="\${siteInfo.auteur}">
+
+  <title>\${title} - \${siteInfo.titre}</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      line-height: 1.6;
+      margin: 0;
+      padding: 0;
+      background-color: #f9f9f9;
+    }
+    .header {
+      background-color: white;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      padding: 10px 0;
+    }
+    .nav {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 20px;
+    }
+    .logo {
+      color: \${siteInfo.couleur};
+      font-weight: bold;
+      font-size: 1.5rem;
+      text-decoration: none;
+    }
+    .nav-links a {
+      margin-left: 20px;
+      color: #333;
+      text-decoration: none;
+    }
+    .nav-links a:hover {
+      color: \${siteInfo.couleur};
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    footer {
+      background-color: #333;
+      color: white;
+      text-align: center;
+      padding: 20px;
+      margin-top: 50px;
+    }
+    .feature-box {
+      background-color: \${siteInfo.couleur}15;
+      border-left: 5px solid \${siteInfo.couleur};
+      padding: 20px;
+      margin: 30px 0;
+    }
+    .btn {
+      display: inline-block;
+      background-color: \${siteInfo.couleur};
+      color: white;
+      padding: 10px 20px;
+      text-decoration: none;
+      border-radius: 5px;
+      margin-top: 20px;
+    }
+    .page-header {
+      text-align: center;
+      padding: 40px 0;
+      border-bottom: 3px solid \${siteInfo.couleur};
+    }
+    .page-title {
+      color: \${siteInfo.couleur};
+      font-size: 2.5rem;
+    }
+    .page-content {
+      max-width: 800px;
+      margin: 30px auto;
+      padding: 0 20px;
+    }
+    form input, form textarea, form button {
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 15px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    form textarea {
+      height: 150px;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="nav">
+      <a href="index.html" class="logo">\${siteInfo.titre}</a>
+      <div class="nav-links">
+        <a href="index.html">Accueil</a>
+        <a href="a-propos.html">À propos</a>
+        <a href="contact.html">Contact</a>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    \${content}
+  </div>
+
+  <footer>
+    © \${siteInfo.annee} - \${siteInfo.auteur} | Site généré avec NekoScript
+  </footer>
+</body>
+</html>\`;
+  }
+  
+  // Contenu de la page d'accueil
+  const accueilContent = \`
+    <div class="page-header">
+      <h1 class="page-title">\${siteInfo.titre}</h1>
+      <p>\${siteInfo.description}</p>
+    </div>
+    
+    <div class="page-content">
+      <h2>Bienvenue sur notre site!</h2>
+      <p>Ce site démontre l'utilisation avancée des variables en NekoScript pour personnaliser votre contenu.</p>
+      
+      <div class="feature-box">
+        <h3>Fonctionnalités principales</h3>
+        <ul>
+          <li>Variables pour personnaliser dynamiquement votre contenu</li>
+          <li>Styles intégrés basés sur des couleurs personnalisées</li>
+          <li>Contenu structuré avec des templates literals</li>
+          <li>Mise en page responsive et moderne</li>
+        </ul>
+      </div>
+      
+      <p>Pour en savoir plus sur nos services, consultez la page À propos.</p>
+      <a href="a-propos.html" class="btn">
+        En savoir plus
+      </a>
+    </div>
+  \`;
+  
+  // Contenu de la page À propos
+  const aProposContent = \`
+    <div class="page-header">
+      <h1 class="page-title">À propos de nous</h1>
+    </div>
+    
+    <div class="page-content">
+      <h2>Notre histoire</h2>
+      <p>\${siteInfo.titre} a été créé pour démontrer la puissance de NekoScript dans la création de sites web dynamiques.</p>
+      
+      <div class="feature-box">
+        <h3>Notre mission</h3>
+        <p>Simplifier la création de sites web en français avec une syntaxe intuitive et puissante.</p>
+      </div>
+      
+      <h2>Notre équipe</h2>
+      <p>Notre équipe est composée de développeurs passionnés dirigés par \${siteInfo.auteur}.</p>
+      
+      <a href="index.html" class="btn">
+        Retour à l'accueil
+      </a>
+    </div>
+  \`;
+  
+  // Contenu de la page Contact
+  const contactContent = \`
+    <div class="page-header">
+      <h1 class="page-title">Contact</h1>
+    </div>
+    
+    <div class="page-content">
+      <h2>Restons en contact</h2>
+      <p>Vous pouvez contacter \${siteInfo.auteur} par email ou téléphone.</p>
+      
+      <div class="feature-box">
+        <h3>Informations de contact</h3>
+        <p>Email: contact@nekoscript.com</p>
+        <p>Téléphone: 01 23 45 67 89</p>
+        <p>Adresse: 123 Avenue de la Programmation, 75000 Paris</p>
+      </div>
+      
+      <form>
+        <div>
+          <label>Votre nom:</label>
+          <input type="text">
+        </div>
+        <div>
+          <label>Votre email:</label>
+          <input type="email">
+        </div>
+        <div>
+          <label>Votre message:</label>
+          <textarea></textarea>
+        </div>
+        <button type="submit" class="btn">Envoyer</button>
+      </form>
+      
+      <a href="index.html" class="btn" style="margin-top: 30px;">
+        Retour à l'accueil
+      </a>
+    </div>
+  \`;
+  
+  // Créer la page d'accueil
+  fs.writeFileSync(
+    path.join(outputDir, 'index.html'),
+    createHtmlTemplate('Accueil', accueilContent),
+    'utf8'
+  );
+  console.log('Page d\'accueil créée: ' + path.join(outputDir, 'index.html'));
+  
+  // Créer la page À propos
+  fs.writeFileSync(
+    path.join(outputDir, 'a-propos.html'),
+    createHtmlTemplate('À propos', aProposContent),
+    'utf8'
+  );
+  console.log('Page À propos créée: ' + path.join(outputDir, 'a-propos.html'));
+  
+  // Créer la page Contact
+  fs.writeFileSync(
+    path.join(outputDir, 'contact.html'),
+    createHtmlTemplate('Contact', contactContent),
+    'utf8'
+  );
+  console.log('Page Contact créée: ' + path.join(outputDir, 'contact.html'));
+  
+  console.log('Site web créé avec succès dans ' + outputDir);
+  
+  // Démarrer un serveur Express pour servir les fichiers
+  const express = require('express');
+  const app = express();
+  const port = 5000;
+  
+  // Servir les fichiers statiques du site
+  app.use(express.static(outputDir));
+  
+  // Démarrer le serveur
+  const server = app.listen(port, '0.0.0.0', () => {
+    console.log('Serveur démarré sur http://localhost:' + port);
+  });
+`);
+
+neko = ("Site web créé avec succès! Visitez http://localhost:5000 pour le voir.");
