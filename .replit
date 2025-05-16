@@ -80,6 +80,18 @@ args = "tester-site-custom"
 task = "workflow.run"
 args = "tester-site-simple"
 
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "tester-site-simple-v2"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "tester-site-solution"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "tester-site-fonctionnel"
+
 [[workflows.workflow]]
 name = "NekoScript"
 author = "agent"
@@ -220,6 +232,30 @@ author = "agent"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "node src/index.js exécuter examples/site-simple.neko"
+
+[[workflows.workflow]]
+name = "tester-site-simple-v2"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "node src/index.js exécuter examples/site-simple.neko"
+
+[[workflows.workflow]]
+name = "tester-site-solution"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "node src/index.js exécuter examples/site-solution.neko"
+
+[[workflows.workflow]]
+name = "tester-site-fonctionnel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "node src/index.js exécuter examples/site-fonctionnel.neko"
 
 [deployment]
 run = ["sh", "-c", "npm install antlr4 sqlite3 && chmod +x bin/neko-script && node src/index.js exécuter examples/hello.neko"]

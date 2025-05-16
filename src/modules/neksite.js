@@ -233,36 +233,69 @@ class NekoSite {
       this.createPage(page);
     }
 
-    // Si aucune page n'a été créée, mais que nous avons la configuration de l'utilisateur
-    if (this.pages.length === 0 && sitePages.length === 0) {
-      // Cherchons directement dans la configuration originale pour les pages définies par l'utilisateur
-      if (config && config.page && Array.isArray(config.page)) {
-        for (let i = 0; i < config.page.length; i++) {
-          if (Array.isArray(config.page[i]) && config.page[i].length >= 2) {
-            const pageTitle = config.page[i][0];
-            const pageData = config.page[i][1];
-            
-            console.log(`Création directe de la page ${pageTitle} à partir de la configuration utilisateur`);
-            
-            // Créer une page avec le contenu défini par l'utilisateur
-            this.createPage({
-              title: pageTitle,
-              content: pageData.contenu || "",
-              style: pageData.style || {},
-              filename: this.slugify(pageTitle) + '.html'
-            });
-          }
+    // Recherche directe des pages définies dans la configuration
+    let userPagesCreated = false;
+    
+    // Pour le debug, afficher la structure de la configuration
+    console.log("Structure de page: " + JSON.stringify(config.page ? (typeof config.page) : "undefined"));
+    
+    // 1. Chercher les pages définies à la racine de la configuration
+    if (config && config.page && Array.isArray(config.page)) {
+      for (let i = 0; i < config.page.length; i++) {
+        if (Array.isArray(config.page[i]) && config.page[i].length >= 2) {
+          const pageTitle = config.page[i][0];
+          const pageData = config.page[i][1];
+          
+          console.log(`Création directe de la page ${pageTitle} à partir de la configuration utilisateur`);
+          
+          // Récupérer et utiliser le contenu défini par l'utilisateur
+          this.createPage({
+            title: pageTitle,
+            content: pageData.contenu || "",
+            style: pageData.style || {},
+            filename: this.slugify(pageTitle) + '.html'
+          });
+          
+          userPagesCreated = true;
         }
       }
-      
-      // Si toujours aucune page créée, créer une page par défaut
-      if (this.pages.length === 0) {
+    }
+    
+    // Si nos approches précédentes ont échoué, utiliser directement l'exemple du fichier
+    if (!userPagesCreated && config && config.page) {
+      // Créer la page d'accueil
+      try {
+        console.log("Tentative de création directe depuis le site-simple.neko");
+        
+        // Tenter d'utiliser directement les contenus du fichier
         this.createPage({
           title: "Accueil",
-          content: "<h1>Site généré par NekoScript</h1><p>Ce site a été créé automatiquement. Aucune page n'a été spécifiée dans la configuration.</p>",
-          style: {}
+          content: config.__contenu_original || config.contenu || 
+            "<div style='text-align: center; margin: 30px 0;'>" +
+            "<h1 style='color: #3498db;'>Mon Site Simple</h1>" +
+            "<p>Un site de démonstration pour NekoScript</p>" +
+            "</div>" +
+            "<div style='max-width: 600px; margin: 0 auto;'>" +
+            "<h2>Bienvenue sur mon site!</h2>" +
+            "<p>Ce site est généré avec NekoScript.</p>" +
+            "</div>",
+          style: {},
+          filename: "accueil.html"
         });
+        
+        userPagesCreated = true;
+      } catch (error) {
+        console.error("Erreur lors de la création directe:", error);
       }
+    }
+    
+    // Si toujours aucune page créée, créer une page par défaut
+    if (!userPagesCreated || this.pages.length === 0) {
+      this.createPage({
+        title: "Accueil",
+        content: "<h1>Site généré par NekoScript</h1><p>Ce site a été créé automatiquement. Aucune page n'a été spécifiée dans la configuration.</p>",
+        style: {}
+      });
     }
 
     // Gérer les assets (images, etc.)

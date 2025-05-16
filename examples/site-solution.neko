@@ -1,0 +1,77 @@
+// Solution pour créer un site NekoScript avec variables
+nekImporter("neksite");
+
+// Fonction pour éviter les erreurs avec les variables
+fonction créerSite() {
+  // Variables nécessaires pour le site
+  var monTitre = "NekoScript Site Builder";
+  var sousTitre = "Créer un site web facilement avec NekoScript";
+  var couleur = "#e74c3c";
+  var texteSecondaire = "Utilisez notre langage intuitif pour créer votre site en quelques minutes.";
+  var elements = [
+    "Syntaxe française et intuitive",
+    "Variables pour personnaliser votre contenu",
+    "Style intégré et facile à modifier",
+    "Support de plusieurs pages"
+  ];
+  
+  // Création du contenu HTML
+  var contenuHTML = `
+    <div style="text-align: center; margin: 40px 0; border-bottom: 3px solid ${couleur}; padding-bottom: 20px;">
+      <h1 style="color: ${couleur}; font-size: 2.5em;">${monTitre}</h1>
+      <p style="font-size: 1.2em;">${sousTitre}</p>
+    </div>
+    
+    <div style="max-width: 800px; margin: 0 auto; padding: 0 20px;">
+      <h2>Notre solution web</h2>
+      <p>${texteSecondaire}</p>
+      
+      <div style="background-color: ${couleur}10; border-left: 5px solid ${couleur}; padding: 15px; margin: 20px 0;">
+        <h3>Fonctionnalités</h3>
+        <ul>`;
+  
+  // Ajouter les éléments de la liste
+  pour i de 0 à elements.length - 1 {
+    contenuHTML = contenuHTML + `
+          <li>${elements[i]}</li>`;
+  }
+  
+  // Compléter le HTML
+  contenuHTML = contenuHTML + `
+        </ul>
+      </div>
+      
+      <h2>Comment commencer?</h2>
+      <p>Créez votre propre site en suivant ces étapes simples:</p>
+      <ol>
+        <li>Importez le module neksite</li>
+        <li>Définissez vos variables de contenu</li>
+        <li>Créez votre site avec neksite.créer</li>
+        <li>Personnalisez le style selon vos besoins</li>
+      </ol>
+      
+      <div style="margin-top: 30px; text-align: center;">
+        <a href="#" style="display: inline-block; background-color: ${couleur}; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
+          Commencer maintenant
+        </a>
+      </div>
+    </div>
+  `;
+  
+  // Création du site
+  neksite.créer {
+    // Configuration globale
+    titre: monTitre;
+    description: sousTitre;
+    
+    // Page d'accueil
+    page = "Accueil" {
+      contenu: contenuHTML;
+    }
+  }
+}
+
+// Exécuter la fonction pour créer le site
+créerSite();
+
+neko = ("Site web créé avec succès!");

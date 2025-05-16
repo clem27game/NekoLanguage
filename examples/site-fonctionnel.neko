@@ -1,0 +1,184 @@
+// Solution garantie pour créer un site NekoScript avec des variables
+nekImporter("neksite");
+
+// Variables pour le site web
+var monTitre = "Site NekoScript Avancé";
+var description = "Un site web dynamique créé avec NekoScript";
+var couleurPrincipale = "#3498db";
+var auteur = "Équipe NekoScript";
+var année = 2025;
+
+// Fonction pour créer du HTML avec des variables
+fonction créerContenuAccueil() {
+  return `
+    <div style="text-align: center; padding: 40px 0; border-bottom: 3px solid ${couleurPrincipale};">
+      <h1 style="color: ${couleurPrincipale}; font-size: 2.5rem;">${monTitre}</h1>
+      <p style="font-size: 1.2rem;">${description}</p>
+    </div>
+    
+    <div style="max-width: 800px; margin: 30px auto; padding: 0 20px;">
+      <h2>Bienvenue sur notre site!</h2>
+      <p>Ce site démontre l'utilisation avancée des variables en NekoScript pour personnaliser votre contenu.</p>
+      
+      <div style="background-color: ${couleurPrincipale}15; border-left: 5px solid ${couleurPrincipale}; padding: 20px; margin: 30px 0;">
+        <h3>Fonctionnalités principales</h3>
+        <ul>
+          <li>Variables pour personnaliser dynamiquement votre contenu</li>
+          <li>Styles intégrés basés sur des couleurs personnalisées</li>
+          <li>Contenu structuré avec des templates literals</li>
+          <li>Mise en page responsive et moderne</li>
+        </ul>
+      </div>
+      
+      <p>Pour en savoir plus sur nos services, consultez la page À propos.</p>
+      <a href="a-propos.html" style="display: inline-block; background-color: ${couleurPrincipale}; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; margin-top: 20px;">
+        En savoir plus
+      </a>
+    </div>
+  `;
+}
+
+fonction créerContenuAPropos() {
+  return `
+    <div style="text-align: center; padding: 40px 0; border-bottom: 3px solid ${couleurPrincipale};">
+      <h1 style="color: ${couleurPrincipale}; font-size: 2.5rem;">À propos de nous</h1>
+    </div>
+    
+    <div style="max-width: 800px; margin: 30px auto; padding: 0 20px;">
+      <h2>Notre histoire</h2>
+      <p>${monTitre} a été créé pour démontrer la puissance de NekoScript dans la création de sites web dynamiques.</p>
+      
+      <div style="background-color: ${couleurPrincipale}15; border-left: 5px solid ${couleurPrincipale}; padding: 20px; margin: 30px 0;">
+        <h3>Notre mission</h3>
+        <p>Simplifier la création de sites web en français avec une syntaxe intuitive et puissante.</p>
+      </div>
+      
+      <h2>Notre équipe</h2>
+      <p>Notre équipe est composée de développeurs passionnés dirigés par ${auteur}.</p>
+      
+      <a href="accueil.html" style="display: inline-block; background-color: ${couleurPrincipale}; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; margin-top: 20px;">
+        Retour à l'accueil
+      </a>
+    </div>
+  `;
+}
+
+fonction créerContenuContact() {
+  return `
+    <div style="text-align: center; padding: 40px 0; border-bottom: 3px solid ${couleurPrincipale};">
+      <h1 style="color: ${couleurPrincipale}; font-size: 2.5rem;">Contact</h1>
+    </div>
+    
+    <div style="max-width: 800px; margin: 30px auto; padding: 0 20px;">
+      <h2>Restons en contact</h2>
+      <p>Vous pouvez contacter ${auteur} par email ou téléphone.</p>
+      
+      <div style="background-color: ${couleurPrincipale}15; border-left: 5px solid ${couleurPrincipale}; padding: 20px; margin: 30px 0;">
+        <h3>Informations de contact</h3>
+        <p>Email: contact@nekoscript.com</p>
+        <p>Téléphone: 01 23 45 67 89</p>
+        <p>Adresse: 123 Avenue de la Programmation, 75000 Paris</p>
+      </div>
+      
+      <form style="margin-top: 30px;">
+        <div style="margin-bottom: 15px;">
+          <label style="display: block; margin-bottom: 5px;">Votre nom:</label>
+          <input type="text" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+        </div>
+        <div style="margin-bottom: 15px;">
+          <label style="display: block; margin-bottom: 5px;">Votre email:</label>
+          <input type="email" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+        </div>
+        <div style="margin-bottom: 15px;">
+          <label style="display: block; margin-bottom: 5px;">Votre message:</label>
+          <textarea style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; height: 150px;"></textarea>
+        </div>
+        <button type="submit" style="background-color: ${couleurPrincipale}; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">Envoyer</button>
+      </form>
+      
+      <a href="accueil.html" style="display: inline-block; background-color: ${couleurPrincipale}; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; margin-top: 20px;">
+        Retour à l'accueil
+      </a>
+    </div>
+  `;
+}
+
+// Création d'un style global personnalisé
+var styleGlobal = `
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    line-height: 1.6;
+    margin: 0;
+    padding: 0;
+    background-color: #f9f9f9;
+  }
+  .header {
+    background-color: white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    padding: 10px 0;
+  }
+  .nav {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 20px;
+  }
+  .logo {
+    color: ${couleurPrincipale};
+    font-weight: bold;
+    font-size: 1.5rem;
+    text-decoration: none;
+  }
+  .nav-links a {
+    margin-left: 20px;
+    color: #333;
+    text-decoration: none;
+  }
+  .nav-links a:hover {
+    color: ${couleurPrincipale};
+  }
+  footer {
+    background-color: #333;
+    color: white;
+    text-align: center;
+    padding: 20px;
+    margin-top: 50px;
+  }
+`;
+
+// Création du site avec les pages personnalisées
+neksite.créer {
+  // Configuration globale du site
+  titre: monTitre;
+  description: description;
+  auteur: auteur;
+  stylePersonnalisé: styleGlobal;
+  
+  // En-tête et pied de page
+  avecNav: vrai;
+  avecFooter: vrai;
+  footerTexte: "© " + année + " - " + auteur + " | Site généré avec NekoScript";
+  
+  // Page d'accueil
+  pages: [
+    {
+      titre: "Accueil",
+      contenu: créerContenuAccueil(),
+      filename: "accueil.html"
+    },
+    {
+      titre: "À propos",
+      contenu: créerContenuAPropos(),
+      filename: "a-propos.html"
+    },
+    {
+      titre: "Contact",
+      contenu: créerContenuContact(),
+      filename: "contact.html"
+    }
+  ]
+}
+
+neko = ("Site web créé avec succès! Le navigateur devrait s'ouvrir automatiquement.");
