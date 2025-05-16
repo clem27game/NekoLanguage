@@ -80,27 +80,158 @@ compteneko = 8 diviser 2;
 ```neko
 nekImporter("neksite");
 
+// Méthode de base pour un site simple
 neksite.créer {
-  page = "Accueil" {
-    style {
-      couleurFond: "#f5f5f5";
-      police: "Arial";
+  titre: "Mon Site NekoScript";
+  description: "Un site web créé avec NekoScript";
+  
+  pages: [
+    {
+      titre: "Accueil",
+      contenu: `
+        <h1>Bienvenue sur mon site</h1>
+        <p>Ce site a été créé avec NekoScript</p>
+        <img src="chat.jpg" alt="Image d'un chat">
+      `,
+      nomFichier: "index.html"
     }
-    
-    neksite.titre("Bienvenue sur mon site");
-    neksite.paragraphe("Créé avec NekoScript");
-    neksite.image("chat.jpg");
-  }
+  ]
 }
 ```
 
 ### Site web avec variables et contenu dynamique
 
+#### Méthode recommandée (nouvelle approche)
+
 ```neko
-nekImporter("neksite");
+// Importation du module neksite amélioré
+nekImporter("neksite-module");
+
+// Variables pour personnaliser le site
+var titreSite = "Blog NekoScript";
+var auteur = "Marie Dupont";
+var couleurPrincipale = "#3498db";
+var datePublication = "15 mai 2025";
+
+// Création du contenu avec des variables
+fonction creerContenuArticle(titre, date, contenu) {
+  return `
+    <article class="post">
+      <h3>${titre}</h3>
+      <div class="date">${date}</div>
+      <p>${contenu}</p>
+    </article>
+  `;
+}
+
+// Liste des articles
+var articles = [
+  {
+    titre: "Initiation à NekoScript",
+    date: "2 mai 2025",
+    contenu: "NekoScript est un langage de programmation en français qui simplifie le développement web et d'applications..."
+  },
+  {
+    titre: "Créer un site avec NekoScript",
+    date: "10 mai 2025",
+    contenu: "Dans ce tutoriel, nous allons apprendre à créer un site web complet avec NekoScript et ses fonctionnalités intégrées..."
+  }
+];
+
+// Génération du contenu HTML pour tous les articles
+fonction genererTousLesArticles() {
+  var htmlArticles = "";
+  pour i de 0 à articles.length - 1 {
+    htmlArticles = htmlArticles + creerContenuArticle(
+      articles[i].titre,
+      articles[i].date,
+      articles[i].contenu
+    );
+  }
+  return htmlArticles;
+}
+
+// Création du site avec neksite
+neksite.créer {
+  titre: titreSite,
+  description: "Un blog créé avec NekoScript",
+  auteur: auteur,
+  couleurPrincipale: couleurPrincipale,
+  couleurSecondaire: "#2ecc71",
+  
+  // Style personnalisé
+  stylePersonnalise: `
+    .post {
+      border-left: 3px solid ${couleurPrincipale};
+      padding-left: 1rem;
+      margin: 2rem 0;
+    }
+    .date {
+      color: #777;
+      font-style: italic;
+    }
+    .header-banner {
+      background-color: ${couleurPrincipale};
+      color: white;
+      padding: 2rem;
+      margin-bottom: 2rem;
+      text-align: center;
+    }
+  `,
+  
+  // Pages du site
+  pages: [
+    {
+      titre: "Accueil",
+      nomFichier: "index.html",
+      contenu: `
+        <div class="header-banner">
+          <h1>${titreSite}</h1>
+          <p>Par ${auteur} - Dernière mise à jour: ${datePublication}</p>
+        </div>
+        
+        <div class="articles">
+          <h2>Articles récents</h2>
+          ${genererTousLesArticles()}
+        </div>
+        
+        <div class="feature-box">
+          <h3>À propos de ce blog</h3>
+          <p>Ce blog présente des tutoriels et astuces sur NekoScript, un langage de programmation en français.</p>
+          <a href="a-propos.html" class="btn">En savoir plus</a>
+        </div>
+      `
+    },
+    {
+      titre: "À propos",
+      nomFichier: "a-propos.html",
+      contenu: `
+        <div class="header-banner">
+          <h1>À propos de ${titreSite}</h1>
+        </div>
+        
+        <div class="contenu">
+          <h2>Notre mission</h2>
+          <p>${titreSite} a été créé pour partager des connaissances sur NekoScript et aider les francophones à découvrir la programmation.</p>
+          
+          <h2>L'auteur</h2>
+          <p>${auteur} est une développeuse passionnée qui travaille avec NekoScript depuis sa création.</p>
+          
+          <a href="index.html" class="btn">Retour à l'accueil</a>
+        </div>
+      `
+    }
+  ]
+}
+```
+
+#### Méthode alternative (création directe des fichiers HTML)
+
+```neko
+nekImporter("interne");
 
 // Configuration du site
-config = {
+var config = {
   titre: "Blog NekoScript",
   auteur: "Marie Dupont",
   couleurTheme: "#3498db",
@@ -110,9 +241,9 @@ config = {
   ]
 };
 
-// Fonction pour générer la liste d'articles
-fonction genererArticles(listeArticles) {
-  html = "";
+// Fonction pour générer la liste d'articles en HTML
+fonction genererArticlesHTML(listeArticles) {
+  var html = "";
   pour i de 0 à listeArticles.length - 1 {
     html = html + "<article class='post'>";
     html = html + "<h3>" + listeArticles[i].titre + "</h3>";
@@ -123,28 +254,54 @@ fonction genererArticles(listeArticles) {
   return html;
 }
 
-// Création du site avec les variables
-neksite.créer {
-  titre: config.titre;
-  styleGlobal: "
+// Création du HTML complet pour la page d'accueil
+var pageAccueilHTML = `<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${config.titre}</title>
+  <style>
     body { font-family: 'Segoe UI', sans-serif; line-height: 1.6; }
-    .header { background-color: " + config.couleurTheme + "; color: white; padding: 2rem; }
-    .post { border-left: 3px solid " + config.couleurTheme + "; padding-left: 1rem; margin: 2rem 0; }
+    .header { background-color: ${config.couleurTheme}; color: white; padding: 2rem; }
+    .post { border-left: 3px solid ${config.couleurTheme}; padding-left: 1rem; margin: 2rem 0; }
     .date { color: #777; font-style: italic; }
-  ";
+    .container { max-width: 800px; margin: 0 auto; padding: 20px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>${config.titre}</h1>
+      <p>Par ${config.auteur}</p>
+    </div>
+    <div class="articles">
+      ${genererArticlesHTML(config.articles)}
+    </div>
+  </div>
+</body>
+</html>`;
+
+// Écriture du fichier HTML
+nekExecuterJS(`
+  const fs = require('fs');
+  const path = require('path');
   
-  page = "Accueil" {
-    contenu: "
-      <div class='header'>
-        <h1>" + config.titre + "</h1>
-        <p>Par " + config.auteur + "</p>
-      </div>
-      <div class='articles'>
-        " + genererArticles(config.articles) + "
-      </div>
-    ";
+  // Créer le répertoire site-output s'il n'existe pas
+  const outputDir = path.join(process.cwd(), 'site-output');
+  if (!fs.existsSync(outputDir)) {
+    fs.mkdirSync(outputDir, { recursive: true });
   }
-}
+  
+  // Écrire le fichier HTML
+  fs.writeFileSync(
+    path.join(outputDir, 'index.html'),
+    \`${pageAccueilHTML}\`,
+    'utf8'
+  );
+  
+  console.log('Site web créé avec succès dans ' + outputDir);
+`);
 ```
 
 ### Bot Discord interactif
@@ -308,12 +465,157 @@ neko-script/
 └── README.md          # Documentation principale
 ```
 
+## Guide détaillé pour créer un site web avec NekoScript
+
+NekoScript offre plusieurs approches pour créer des sites web, des plus simples aux plus complexes. Cette section vous guidera à travers les différentes méthodes, avec un accent particulier sur l'approche recommandée pour intégrer facilement des variables personnalisées.
+
+### Méthode 1: Module neksite-module (recommandée)
+
+Le module `neksite-module` est l'approche la plus simple et la plus fiable pour créer des sites web avec NekoScript. Ce module gère correctement les variables et offre une personnalisation complète.
+
+#### Étape 1: Importer le module
+
+```neko
+nekImporter("neksite-module");
+```
+
+#### Étape 2: Définir vos variables personnalisées
+
+```neko
+var titreSite = "Mon Super Site";
+var couleurPrincipale = "#9b59b6"; // Violet
+var couleurSecondaire = "#f1c40f"; // Jaune
+var auteur = "Votre Nom";
+```
+
+#### Étape 3: Créer votre site avec des pages multiples
+
+```neko
+neksite.créer {
+  // Configuration du site
+  titre: titreSite,
+  description: "Description de votre site",
+  auteur: auteur,
+  couleurPrincipale: couleurPrincipale,
+  couleurSecondaire: couleurSecondaire,
+  
+  // Ajouter du CSS personnalisé
+  stylePersonnalise: `
+    .monElement {
+      color: ${couleurPrincipale};
+      border: 2px solid ${couleurSecondaire};
+    }
+  `,
+  
+  // Définir les pages du site
+  pages: [
+    {
+      titre: "Accueil",
+      nomFichier: "index.html", // Important pour la page d'accueil
+      contenu: `
+        <h1>Bienvenue sur ${titreSite}</h1>
+        <p>Un site créé avec NekoScript par ${auteur}</p>
+        
+        <div class="monElement">
+          Cet élément utilise les couleurs personnalisées
+        </div>
+      `
+    },
+    {
+      titre: "Contact",
+      nomFichier: "contact.html",
+      contenu: `
+        <h1>Contactez-nous</h1>
+        <p>Envoyez un message à ${auteur}</p>
+        
+        <form>
+          <input type="text" placeholder="Votre nom">
+          <input type="email" placeholder="Votre email">
+          <button type="submit" style="background-color: ${couleurPrincipale}">
+            Envoyer
+          </button>
+        </form>
+      `
+    }
+  ]
+}
+```
+
+#### Astuces pour la méthode neksite-module
+
+- Utilisez toujours `var` pour déclarer vos variables
+- Utilisez des template literals (avec des backticks \`) pour intégrer des variables dans votre HTML
+- Définissez des fonctions pour générer du contenu répétitif
+- N'oubliez pas de nommer la page d'accueil `index.html`
+
+### Méthode 2: Génération directe de HTML
+
+Si vous avez besoin d'un contrôle total sur le HTML généré, vous pouvez utiliser cette méthode alternative :
+
+```neko
+nekImporter("interne");
+
+// Créer le HTML avec vos variables
+var titre = "Mon Site";
+var couleur = "#3498db";
+
+var htmlComplet = `<!DOCTYPE html>
+<html>
+<head>
+  <title>${titre}</title>
+  <style>
+    body { color: ${couleur}; }
+  </style>
+</head>
+<body>
+  <h1>${titre}</h1>
+</body>
+</html>`;
+
+// Générer le fichier
+nekExecuterJS(`
+  const fs = require('fs');
+  const path = require('path');
+  
+  // Créer le dossier de sortie
+  const outputDir = 'site-output';
+  if (!fs.existsSync(outputDir)) {
+    fs.mkdirSync(outputDir, { recursive: true });
+  }
+  
+  // Écrire le fichier HTML
+  fs.writeFileSync(
+    path.join(outputDir, 'index.html'),
+    \`${htmlComplet}\`,
+    'utf8'
+  );
+  
+  console.log('Site créé dans: ' + outputDir);
+`);
+```
+
+### Méthode 3: Portfolio complet (exemple avancé)
+
+Voir l'exemple complet du portfolio dans `examples/demo-neksite.neko` qui montre comment créer un site portfolio professionnel avec des projets, une galerie et des formulaires de contact.
+
+### Visualisation et déploiement
+
+Une fois votre site généré, vous pouvez le visualiser :
+
+```bash
+# Lancer le serveur pour voir votre site
+node serveur-site.js
+
+# Le site sera accessible sur http://localhost:5000
+```
+
 ## Documentation
 
 Pour plus d'informations, consultez les documents suivants dans le répertoire `docs/` :
 
 - [Guide de démarrage rapide](docs/QUICKSTART.md) - Pour commencer à utiliser NekoScript
 - [Limitations actuelles](docs/LIMITATIONS.md) - Informations sur les limitations de la version actuelle
+- [Guide de création de sites web](docs/GUIDE-SITES.md) - Guide détaillé sur la création de sites web
 - [Guide de contribution](docs/CONTRIBUTING.md) - Comment contribuer au projet
 - [Guide de publication](docs/PUBLISHING.md) - Instructions pour publier NekoScript sur GitHub et npm
 
