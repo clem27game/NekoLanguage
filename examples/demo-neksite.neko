@@ -1,0 +1,312 @@
+// Démonstration du module neksite amélioré
+// Ce script crée un site web complet avec des variables personnalisées
+
+// Importation du module neksite
+nekImporter("examples/neksite-module.neko");
+
+// Création d'un site web avec des options personnalisées
+neksite.creer({
+  // Informations générales du site
+  titre: "Mon Portfolio NekoScript",
+  description: "Portfolio personnel créé avec NekoScript",
+  couleurPrincipale: "#9b59b6",  // Violet
+  couleurSecondaire: "#f1c40f",  // Jaune
+  auteur: "Jean Dupont",
+  annee: 2025,
+  
+  // Style personnalisé supplémentaire
+  stylePersonnalise: `
+    .projet {
+      border: 1px solid var(--couleur-bordure);
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 30px;
+      transition: transform 0.3s;
+    }
+    .projet:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    .projet-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+    .projet-titre {
+      margin: 0;
+      color: var(--couleur-principale);
+    }
+    .projet-date {
+      font-size: 0.9rem;
+      color: #777;
+    }
+    .competence {
+      display: inline-block;
+      background-color: #f0f0f0;
+      padding: 4px 10px;
+      border-radius: 15px;
+      margin-right: 8px;
+      margin-bottom: 8px;
+      font-size: 0.9rem;
+    }
+    .portfolio-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 20px;
+      margin-top: 30px;
+    }
+    .portfolio-item {
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+    }
+    .portfolio-item img {
+      width: 100%;
+      height: 180px;
+      object-fit: cover;
+      display: block;
+    }
+    .portfolio-content {
+      padding: 15px;
+      background-color: #fff;
+    }
+    .social-links {
+      display: flex;
+      gap: 15px;
+      margin-top: 20px;
+    }
+    .social-link {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background-color: var(--couleur-principale);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      text-decoration: none;
+      transition: background-color 0.3s;
+    }
+    .social-link:hover {
+      background-color: var(--couleur-secondaire);
+    }
+  `,
+  
+  // Pages du site
+  pages: [
+    {
+      titre: "Accueil",
+      nomFichier: "index.html",
+      contenu: `
+        <section class="hero">
+          <h1>Jean Dupont</h1>
+          <p>Développeur Web & Designer UI/UX</p>
+        </section>
+        
+        <section class="contenu">
+          <h2>Bienvenue sur mon portfolio</h2>
+          <p>Je suis un développeur web passionné par la création d'expériences web modernes et intuitives. Avec plus de 5 ans d'expérience dans le développement frontend et backend, je propose des solutions web complètes et sur mesure.</p>
+          
+          <div class="feature-box">
+            <h3>Mes services</h3>
+            <ul>
+              <li>Développement de sites web responsifs</li>
+              <li>Applications web avec JavaScript/Vue.js/React</li>
+              <li>Design UI/UX personnalisé</li>
+              <li>Optimisation des performances web</li>
+            </ul>
+          </div>
+          
+          <h2>Derniers projets</h2>
+          
+          <div class="portfolio-grid">
+            <div class="portfolio-item">
+              <img src="https://images.unsplash.com/photo-1499750310107-5fef28a66643" alt="Projet Ecommerce">
+              <div class="portfolio-content">
+                <h3>Site E-commerce</h3>
+                <p>Boutique en ligne complète avec paiement sécurisé</p>
+              </div>
+            </div>
+            
+            <div class="portfolio-item">
+              <img src="https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d" alt="Projet Web App">
+              <div class="portfolio-content">
+                <h3>Application Web</h3>
+                <p>Tableau de bord interactif pour la gestion de projets</p>
+              </div>
+            </div>
+            
+            <div class="portfolio-item">
+              <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71" alt="Projet Mobile">
+              <div class="portfolio-content">
+                <h3>Design Mobile</h3>
+                <p>Interface utilisateur pour application mobile de fitness</p>
+              </div>
+            </div>
+          </div>
+          
+          <a href="projets.html" class="btn">Voir tous les projets</a>
+        </section>
+      `
+    },
+    
+    {
+      titre: "Projets",
+      nomFichier: "projets.html",
+      contenu: `
+        <section class="hero">
+          <h1>Mes Projets</h1>
+          <p>Une sélection de mes réalisations récentes</p>
+        </section>
+        
+        <section class="contenu">
+          <div class="projet">
+            <div class="projet-header">
+              <h2 class="projet-titre">Plateforme E-learning</h2>
+              <span class="projet-date">Décembre 2024</span>
+            </div>
+            <p>Développement d'une plateforme complète de cours en ligne avec système d'abonnement, vidéos streaming et quiz interactifs.</p>
+            <div style="margin-top: 15px;">
+              <span class="competence">React</span>
+              <span class="competence">Node.js</span>
+              <span class="competence">MongoDB</span>
+              <span class="competence">AWS</span>
+            </div>
+          </div>
+          
+          <div class="projet">
+            <div class="projet-header">
+              <h2 class="projet-titre">Application de Recettes</h2>
+              <span class="projet-date">Octobre 2024</span>
+            </div>
+            <p>Conception et développement d'une application mobile permettant de découvrir, sauvegarder et partager des recettes de cuisine avec planification de repas.</p>
+            <div style="margin-top: 15px;">
+              <span class="competence">Vue.js</span>
+              <span class="competence">Firebase</span>
+              <span class="competence">PWA</span>
+            </div>
+          </div>
+          
+          <div class="projet">
+            <div class="projet-header">
+              <h2 class="projet-titre">Refonte Site Immobilier</h2>
+              <span class="projet-date">Août 2024</span>
+            </div>
+            <p>Refonte complète d'un site d'agence immobilière avec filtres de recherche avancés, visites virtuelles et système de prise de rendez-vous.</p>
+            <div style="margin-top: 15px;">
+              <span class="competence">WordPress</span>
+              <span class="competence">PHP</span>
+              <span class="competence">JavaScript</span>
+              <span class="competence">MySQL</span>
+            </div>
+          </div>
+          
+          <div class="projet">
+            <div class="projet-header">
+              <h2 class="projet-titre">Dashboard Analytics</h2>
+              <span class="projet-date">Mai 2024</span>
+            </div>
+            <p>Création d'un tableau de bord d'analyse de données pour une entreprise SaaS avec visualisations interactives et rapports automatisés.</p>
+            <div style="margin-top: 15px;">
+              <span class="competence">D3.js</span>
+              <span class="competence">React</span>
+              <span class="competence">GraphQL</span>
+              <span class="competence">PostgreSQL</span>
+            </div>
+          </div>
+          
+          <a href="index.html" class="btn">Retour à l'accueil</a>
+        </section>
+      `
+    },
+    
+    {
+      titre: "À propos",
+      nomFichier: "a-propos.html",
+      contenu: `
+        <section class="hero">
+          <h1>À propos de moi</h1>
+          <p>Développeur web passionné et créatif</p>
+        </section>
+        
+        <section class="contenu">
+          <h2>Mon parcours</h2>
+          <p>Diplômé en informatique, je me suis spécialisé dans le développement web et le design d'interfaces utilisateur. Avec plus de 5 ans d'expérience professionnelle, j'ai travaillé sur divers projets allant des sites vitrines aux applications web complexes.</p>
+          
+          <div class="feature-box">
+            <h3>Mes compétences</h3>
+            <ul>
+              <li><strong>Langages :</strong> HTML, CSS, JavaScript, PHP, Python</li>
+              <li><strong>Frameworks :</strong> React, Vue.js, Laravel, Express</li>
+              <li><strong>Outils :</strong> Git, Docker, Webpack, Figma</li>
+              <li><strong>Bases de données :</strong> MySQL, MongoDB, PostgreSQL</li>
+            </ul>
+          </div>
+          
+          <h2>Expérience professionnelle</h2>
+          <p>J'ai collaboré avec des startups et des entreprises établies pour développer des applications web performantes et des interfaces utilisateur intuitives. Mon approche combine une solide compréhension technique avec une sensibilité design pour créer des expériences utilisateur exceptionnelles.</p>
+          
+          <h2>Ma philosophie</h2>
+          <p>Je crois que la technologie doit être au service de l'utilisateur. Chaque ligne de code que j'écris vise à rendre l'expérience plus fluide, plus agréable et plus efficace. La simplicité est souvent la clé d'une bonne expérience utilisateur.</p>
+          
+          <a href="contact.html" class="btn">Me contacter</a>
+        </section>
+      `
+    },
+    
+    {
+      titre: "Contact",
+      nomFichier: "contact.html",
+      contenu: `
+        <section class="hero">
+          <h1>Contact</h1>
+          <p>Travaillons ensemble sur votre prochain projet</p>
+        </section>
+        
+        <section class="contenu">
+          <h2>Restons en contact</h2>
+          <p>Vous avez un projet en tête ou une question ? N'hésitez pas à me contacter pour discuter de vos besoins ou simplement échanger sur les technologies web.</p>
+          
+          <div class="feature-box">
+            <h3>Informations de contact</h3>
+            <p>Email: jean.dupont@exemple.com</p>
+            <p>Téléphone: +33 6 12 34 56 78</p>
+            <p>Localisation: Paris, France</p>
+            
+            <div class="social-links">
+              <a href="#" class="social-link">in</a>
+              <a href="#" class="social-link">GH</a>
+              <a href="#" class="social-link">tw</a>
+            </div>
+          </div>
+          
+          <h2>Envoyez-moi un message</h2>
+          <form>
+            <div class="form-group">
+              <label for="nom">Votre nom</label>
+              <input type="text" id="nom" name="nom" required>
+            </div>
+            
+            <div class="form-group">
+              <label for="email">Votre email</label>
+              <input type="email" id="email" name="email" required>
+            </div>
+            
+            <div class="form-group">
+              <label for="sujet">Sujet</label>
+              <input type="text" id="sujet" name="sujet" required>
+            </div>
+            
+            <div class="form-group">
+              <label for="message">Votre message</label>
+              <textarea id="message" name="message" rows="5" required></textarea>
+            </div>
+            
+            <button type="submit" class="btn">Envoyer le message</button>
+          </form>
+        </section>
+      `
+    }
+  ]
+});

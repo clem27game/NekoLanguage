@@ -108,6 +108,10 @@ args = "serveur-site-nekoscript"
 task = "workflow.run"
 args = "generateur-site-nekoscript"
 
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "site-web-nekoscript"
+
 [[workflows.workflow]]
 name = "NekoScript"
 author = "agent"
@@ -307,6 +311,15 @@ author = "agent"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "node src/index.js exécuter examples/generateur-site.neko"
+
+[[workflows.workflow]]
+name = "site-web-nekoscript"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "node neko-site-generateur.js"
+waitForPort = 5000
 
 [deployment]
 run = ["sh", "-c", "npm install antlr4 sqlite3 && chmod +x bin/neko-script && node src/index.js exécuter examples/hello.neko"]
